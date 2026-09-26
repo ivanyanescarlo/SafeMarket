@@ -219,9 +219,73 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Right Column: Pricing, Gemini AI Risk Warning, Actions & Seller Profile (5 cols) */}
+        {/* Right Column: Seller Profile, Pricing, Gemini AI Risk Warning & Actions (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
           
+          {/* Seller Card (Prominently displayed at the top) */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Seller Profile
+            </h3>
+
+            <div className="flex items-center gap-3.5">
+              {seller.profileImage ? (
+                <img
+                  src={seller.profileImage}
+                  alt={seller.firstName}
+                  className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-safegreen-100 text-safegreen-800 flex items-center justify-center font-bold text-base border border-safegreen-200">
+                  {seller.firstName ? seller.firstName[0].toUpperCase() : 'S'}
+                </div>
+              )}
+
+              <div className="flex-1">
+                <Link
+                  to={`/profile/${seller._id}`}
+                  className="text-sm font-bold text-slate-900 hover:text-safegreen-700 hover:underline block"
+                >
+                  {seller.firstName} {seller.lastName}
+                </Link>
+                <span className="text-xs text-slate-400">@{seller.username}</span>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center text-amber-500 text-xs font-bold">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 mr-1" />
+                    <span>{seller.averageRating > 0 ? seller.averageRating.toFixed(1) : 'New Seller'}</span>
+                  </div>
+                  {seller.ratingCount > 0 && (
+                    <span className="text-[11px] text-slate-400">
+                      ({seller.ratingCount} reviews)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {seller.bio && (
+              <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                "{seller.bio}"
+              </p>
+            )}
+
+            <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+              <div className="flex items-center justify-between">
+                <span>General Area:</span>
+                <span className="font-semibold text-slate-800">
+                  {seller.location?.cityMunicipality}, {seller.location?.province}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Member Since:</span>
+                <span className="font-semibold text-slate-800">
+                  {seller.createdAt ? new Date(seller.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '2026'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between text-xs text-safegreen-700 font-bold uppercase tracking-wider">
               <span>{listing.category}</span>
@@ -312,70 +376,6 @@ export default function ProductDetail() {
                   </Link>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Seller Card (No exact personal address shown) */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Seller Profile
-            </h3>
-
-            <div className="flex items-center gap-3.5">
-              {seller.profileImage ? (
-                <img
-                  src={seller.profileImage}
-                  alt={seller.firstName}
-                  className="w-12 h-12 rounded-full object-cover border border-slate-200"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-safegreen-100 text-safegreen-800 flex items-center justify-center font-bold text-base border border-safegreen-200">
-                  {seller.firstName ? seller.firstName[0].toUpperCase() : 'S'}
-                </div>
-              )}
-
-              <div className="flex-1">
-                <Link
-                  to={`/profile/${seller._id}`}
-                  className="text-sm font-bold text-slate-900 hover:text-safegreen-700 hover:underline block"
-                >
-                  {seller.firstName} {seller.lastName}
-                </Link>
-                <span className="text-xs text-slate-400">@{seller.username}</span>
-
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center text-amber-500 text-xs font-bold">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 mr-1" />
-                    <span>{seller.averageRating > 0 ? seller.averageRating.toFixed(1) : 'New Seller'}</span>
-                  </div>
-                  {seller.ratingCount > 0 && (
-                    <span className="text-[11px] text-slate-400">
-                      ({seller.ratingCount} reviews)
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {seller.bio && (
-              <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                "{seller.bio}"
-              </p>
-            )}
-
-            <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 space-y-1">
-              <div className="flex items-center justify-between">
-                <span>General Area:</span>
-                <span className="font-semibold text-slate-800">
-                  {seller.location?.cityMunicipality}, {seller.location?.province}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Member Since:</span>
-                <span className="font-semibold text-slate-800">
-                  {seller.createdAt ? new Date(seller.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '2026'}
-                </span>
-              </div>
             </div>
           </div>
 
