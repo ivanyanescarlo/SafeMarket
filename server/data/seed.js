@@ -6,18 +6,21 @@ const Rating = require('../models/Rating');
 const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
 
-const seedData = async () => {
+const seedData = async (forceClear = false) => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/SafeMarket');
-    console.log('[Seed] Connected to MongoDB database...');
+    const userCount = await User.countDocuments();
+    if (!forceClear && userCount > 0) {
+      console.log(`[Seed] Database already populated (${userCount} users found). Skipping auto-seed.`);
+      return;
+    }
 
-    // Clear existing data
+    // Clear existing data if forcing or empty
     await User.deleteMany({});
     await Listing.deleteMany({});
     await Rating.deleteMany({});
     await Notification.deleteMany({});
     await ActivityLog.deleteMany({});
-    console.log('[Seed] Cleared existing records.');
+    console.log('[Seed] Populating initial sample accounts and product listings...');
 
     // 1. Create Administrator
     const admin = await User.create({
@@ -407,11 +410,19 @@ const seedData = async () => {
     console.log('Buyer Account: carlo@safemarket.ph / Password123!');
     console.log('======================================================\n');
 
-    process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);
-    process.exit(1);
   }
 };
 
-seedData();
+if (require.main === module) {
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/SafeMarket')
+    .then(() => seedData(true))
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
+
+module.exports = seedData;
