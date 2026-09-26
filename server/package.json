@@ -1,0 +1,22 @@
+{
+  "name": "safemarket-server",
+  "version": "1.0.0",
+  "description": "SafeMarket Express & MongoDB Backend with Gemini AI Scam Risk Analyzer",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node data/seed.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.10.1",
+    "nodemailer": "^10.0.10"
+  }
+}

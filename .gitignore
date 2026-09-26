@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+*.env
+server/.env
+client/.env
+server/.env.local
+
+# Production Build Output
+dist/
+client/dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
