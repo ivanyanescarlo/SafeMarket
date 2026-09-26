@@ -22,7 +22,6 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import RiskWarningBanner from '../components/listing/RiskWarningBanner';
 import ReportModal from '../components/common/ReportModal';
-import RatingModal from '../components/common/RatingModal';
 import ListingCard from '../components/listing/ListingCard';
 
 export default function ProductDetail() {
@@ -36,7 +35,6 @@ export default function ProductDetail() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [msgLoading, setMsgLoading] = useState(false);
 
   useEffect(() => {
@@ -389,11 +387,18 @@ export default function ProductDetail() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setRatingModalOpen(true)}
+                        onClick={() => {
+                          if (navigator.share) {
+                            navigator.share({ title: listing.title, url: window.location.href });
+                          } else {
+                            navigator.clipboard.writeText(window.location.href);
+                            alert('Listing URL copied to clipboard!');
+                          }
+                        }}
                         className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"
                       >
-                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                        <span>Rate Seller</span>
+                        <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Share Listing</span>
                       </button>
                     )}
                   </div>
@@ -451,18 +456,6 @@ export default function ProductDetail() {
         onClose={() => setReportModalOpen(false)}
         listingId={listing._id}
         listingTitle={listing.title}
-      />
-
-      {/* Rating Modal */}
-      <RatingModal
-        isOpen={ratingModalOpen}
-        onClose={() => setRatingModalOpen(false)}
-        sellerId={seller._id}
-        sellerName={`${seller.firstName} ${seller.lastName}`}
-        listingId={listing._id}
-        onRatingSuccess={() => {
-          // Re-fetch listing or update local state
-        }}
       />
     </div>
   );
