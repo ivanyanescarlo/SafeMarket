@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { CartProvider } from './context/CartContext';
 
 // Layout
 import Header from './components/layout/Header';
@@ -12,6 +13,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import Home from './pages/Home';
 import ProductCatalog from './pages/ProductCatalog';
 import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
@@ -34,15 +36,17 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
-          <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-            <Header />
+          <CartProvider>
+            <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+              <Header />
 
-            <main className="flex-1">
-              <Routes>
-                {/* Public Marketplace Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/products" element={<ProductCatalog />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
+              <main className="flex-1">
+                <Routes>
+                  {/* Public Marketplace Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/products" element={<ProductCatalog />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-otp" element={<VerifyOtp />} />
@@ -145,8 +149,9 @@ export default function App() {
 
             <Footer />
           </div>
-        </NotificationProvider>
-      </AuthProvider>
+        </CartProvider>
+      </NotificationProvider>
+    </AuthProvider>
     </BrowserRouter>
   );
 }
