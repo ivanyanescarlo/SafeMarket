@@ -144,10 +144,10 @@ export default function VerifyOtp() {
               Code expires in 10 minutes. Check your inbox or SMS.
             </p>
 
-            {/* Development Helper Banner */}
-            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900">
-              <span className="font-bold block mb-0.5">💻 Local Development Mode:</span>
-              Look at your <strong>Backend Terminal Window</strong> (where <code>npm start</code> is running). The 6-digit OTP code is printed right there!
+            {/* Spam / Junk Folder Reminder */}
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-xs text-slate-600">
+              <span className="font-bold block text-slate-800 mb-0.5">📩 Didn't see the email?</span>
+              Please check your <strong>Spam / Junk</strong> folder or <strong>Promotions tab</strong>, as automated security codes can sometimes be filtered there.
             </div>
           </div>
 
