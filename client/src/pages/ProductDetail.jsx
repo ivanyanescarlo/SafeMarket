@@ -339,37 +339,25 @@ export default function ProductDetail() {
                     <span>{msgLoading ? 'Connecting...' : "🙋‍♂️ I'm Interested! Send Inquiry"}</span>
                   </button>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {isInCart(listing._id) ? (
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(listing._id)}
-                        className="py-2.5 px-3 bg-emerald-100 border border-emerald-300 text-safegreen-900 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <Check className="w-3.5 h-3.5 text-safegreen-700" />
-                        <span>Saved in Cart</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => addToCart(listing)}
-                        className="py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                        <span>Add to Cart</span>
-                      </button>
-                    )}
-
+                  {isInCart(listing._id) ? (
                     <button
                       type="button"
-                      onClick={() => handleStartMessage(`Hi ${seller.firstName}! 📍 I would like to inspect and meet up for your "${listing.title}" (${formattedPrice}) in a safe commercial mall in ${listing.location?.cityMunicipality || 'your area'}. What day works best for you?`)}
-                      disabled={msgLoading}
-                      className="py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-safegreen-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      onClick={() => removeFromCart(listing._id)}
+                      className="w-full py-3 px-4 bg-emerald-100 border border-emerald-300 text-safegreen-900 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2"
                     >
-                      <MapPin className="w-3.5 h-3.5 text-safegreen-600" />
-                      <span>Propose Meetup</span>
+                      <Check className="w-4 h-4 text-safegreen-700" />
+                      <span>Saved in Cart (Click to Remove)</span>
                     </button>
-                  </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => addToCart(listing)}
+                      className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Add to Cart / Save Item</span>
+                    </button>
+                  )}
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button

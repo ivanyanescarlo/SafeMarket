@@ -1,11 +1,12 @@
 const Rating = require('../models/Rating');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Conversation = require('../models/Conversation');
 const { logActivity } = require('../utils/logger');
 
 /**
  * @route   POST /api/ratings
- * @desc    Submit a rating & feedback for a seller
+ * @desc    Submit a rating & feedback for a seller (Requires prior transaction/chat)
  */
 exports.createRating = async (req, res) => {
   try {
@@ -38,6 +39,18 @@ exports.createRating = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Seller not found.'
+      });
+    }
+
+    // VERIFIED TRANSACTION CHECK: Check if buyer has messaged or transacted with the seller
+    const conversation = await Conversation.findOne({
+      participants: { $all: [buyerId, sellerId] }
+    });
+
+    if (!conversation) {
+      return res.status(403).json({
+        success: false,
+        message: 'Verified Transaction Required: You can only rate a seller after messaging them or completing a transaction.'
       });
     }
 
