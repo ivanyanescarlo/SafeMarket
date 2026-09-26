@@ -2,6 +2,7 @@
   "name": "safemarket",
   "version": "1.0.0",
   "description": "SafeMarket - Secure Local Online Marketplace and Scam Prevention System",
+  "license": "MIT",
   "scripts": {
     "start": "cd server && npm start",
     "server": "cd server && npm start",
