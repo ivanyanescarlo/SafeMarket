@@ -55,20 +55,23 @@ exports.register = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanUsername = username.toLowerCase().trim();
+
     // Check existing email or username
-    const existingEmail = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingEmail) {
+    const existingEmail = await User.findOne({ email: cleanEmail });
+    if (existingEmail && existingEmail.isVerified) {
       return res.status(400).json({
         success: false,
-        message: 'An account with this email address already exists.'
+        message: 'An account with this email address already exists. Please log in directly.'
       });
     }
 
-    const existingUsername = await User.findOne({ username: username.toLowerCase().trim() });
-    if (existingUsername) {
+    const existingUsername = await User.findOne({ username: cleanUsername });
+    if (existingUsername && existingUsername.isVerified && existingUsername._id.toString() !== existingEmail?._id.toString()) {
       return res.status(400).json({
         success: false,
-        message: 'This username is already taken. Please choose another.'
+        message: 'This username is already taken by a verified user. Please choose another.'
       });
     }
 
@@ -76,23 +79,41 @@ exports.register = async (req, res) => {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Create user
-    const user = await User.create({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      username: username.toLowerCase().trim(),
-      email: email.toLowerCase().trim(),
-      password,
-      mobileNumber: mobileNumber.trim(),
-      location: {
+    let user;
+    if (existingEmail && !existingEmail.isVerified) {
+      // Re-use unverified user account: update details & generate new OTP
+      user = existingEmail;
+      user.firstName = firstName.trim();
+      user.lastName = lastName.trim();
+      user.username = cleanUsername;
+      user.password = password; // Will be hashed via pre-save hook
+      user.mobileNumber = mobileNumber.trim();
+      user.location = {
         province: province.trim(),
         cityMunicipality: cityMunicipality.trim()
-      },
-      role: 'buyer',
-      isVerified: false,
-      otpCode: otp,
-      otpExpiresAt: otpExpires
-    });
+      };
+      user.otpCode = otp;
+      user.otpExpiresAt = otpExpires;
+      await user.save();
+    } else {
+      // Create new unverified user
+      user = await User.create({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
+        password,
+        mobileNumber: mobileNumber.trim(),
+        location: {
+          province: province.trim(),
+          cityMunicipality: cityMunicipality.trim()
+        },
+        role: 'buyer',
+        isVerified: false,
+        otpCode: otp,
+        otpExpiresAt: otpExpires
+      });
+    }
 
     // Send OTP via Email (or terminal console fallback)
     await sendOtpEmail(user.email, otp, user.firstName);
@@ -110,7 +131,7 @@ exports.register = async (req, res) => {
     // Do NOT expose OTP in response
     res.status(201).json({
       success: true,
-      message: 'Account created! Please enter the 6-digit OTP code sent to your email/mobile.',
+      message: 'Account registered! Please enter the 6-digit OTP code sent to your email.',
       userId: user._id,
       email: user.email,
       mobileNumber: user.mobileNumber
