@@ -10,11 +10,6 @@ server/.env
 client/.env
 server/.env.local
 
-# Production Build Output
-dist/
-client/dist/
-build/
-
 # Logs
 *.log
 npm-debug.log*

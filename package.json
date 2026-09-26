@@ -9,6 +9,6 @@
     "client": "cd client && npm run dev",
     "seed": "cd server && npm run seed",
     "build": "cd client && npm install && npm run build",
-    "postinstall": "cd server && npm install && cd ../client && npm install"
+    "postinstall": "cd client && npm install && npm run build && cd ../server && npm install"
   }
 }
