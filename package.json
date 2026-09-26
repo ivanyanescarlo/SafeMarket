@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "SafeMarket - Secure Local Online Marketplace and Scam Prevention System",
   "scripts": {
+    "start": "cd server && npm start",
     "server": "cd server && npm start",
     "client": "cd client && npm run dev",
     "seed": "cd server && npm run seed",

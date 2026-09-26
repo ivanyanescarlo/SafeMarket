@@ -49,6 +49,20 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/locations', locationRoutes);
 
+const path = require('path');
+const fs = require('fs');
+
+// Serve static client assets in production
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  console.log('📦 Production build detected. Serving static client files from client/dist');
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api/')) return next();
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('[SafeMarket Server Error]:', err.stack || err.message);
@@ -61,8 +75,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 Route Handler
-app.use('*', (req, res) => {
+// 404 Route Handler for API routes
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
     message: `API route not found: ${req.originalUrl}`
