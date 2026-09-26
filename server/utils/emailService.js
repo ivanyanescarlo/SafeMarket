@@ -27,18 +27,23 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
     return { success: true, delivered: false, mode: 'terminal' };
   }
 
-  try {
     const transporter = nodemailer.createTransport(
       process.env.EMAIL_SERVICE
         ? {
             service: service,
-            auth: { user, pass }
+            auth: { user, pass },
+            connectionTimeout: 4000,
+            greetingTimeout: 4000,
+            socketTimeout: 6000
           }
         : {
             host: host,
             port: port,
             secure: port === 465,
-            auth: { user, pass }
+            auth: { user, pass },
+            connectionTimeout: 4000,
+            greetingTimeout: 4000,
+            socketTimeout: 6000
           }
     );
 

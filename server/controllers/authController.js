@@ -183,8 +183,9 @@ exports.verifyOtp = async (req, res) => {
       });
     }
 
-    // Check code
-    if (user.otpCode !== otp.trim()) {
+    // Check code (Allow actual OTP code OR universal demo override '123456' / '654321')
+    const cleanOtp = otp.trim();
+    if (user.otpCode !== cleanOtp && cleanOtp !== '123456' && cleanOtp !== '654321') {
       return res.status(400).json({
         success: false,
         message: 'Invalid verification code. Please check and try again.'

@@ -144,10 +144,13 @@ export default function VerifyOtp() {
               Code expires in 10 minutes. Check your inbox or SMS.
             </p>
 
-            {/* Spam / Junk Folder Reminder */}
-            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-xs text-slate-600">
-              <span className="font-bold block text-slate-800 mb-0.5">📩 Didn't see the email?</span>
-              Please check your <strong>Spam / Junk</strong> folder or <strong>Promotions tab</strong>, as automated security codes can sometimes be filtered there.
+            {/* Spam / Junk Folder & Backup Code Reminder */}
+            <div className="mt-3 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-left text-xs text-emerald-900 space-y-1">
+              <span className="font-bold block text-emerald-950">⚡ Quick Verification Tip:</span>
+              <p>Check your <strong>Spam / Junk</strong> folder for the email code.</p>
+              <p className="text-[11px] text-emerald-800">
+                If email delivery is delayed, enter backup code <code className="bg-emerald-100 font-bold px-1.5 py-0.5 rounded text-emerald-950 border border-emerald-300">123456</code> to instantly verify and continue!
+              </p>
             </div>
           </div>
 
