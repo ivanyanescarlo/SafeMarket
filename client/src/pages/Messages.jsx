@@ -7,11 +7,14 @@ import {
   ShieldCheck,
   Package,
   Clock,
-  CheckCheck
+  CheckCheck,
+  Star,
+  CheckCircle2
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import RatingModal from '../components/common/RatingModal';
 
 export default function Messages() {
   const { user } = useAuth();
@@ -19,6 +22,7 @@ export default function Messages() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const activeConvParam = queryParams.get('conversationId');
+  const openRatingParam = queryParams.get('openRating') === 'true';
 
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(activeConvParam || null);
@@ -27,6 +31,10 @@ export default function Messages() {
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
+  
+  // Rating Modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState(openRatingParam);
+  const [markingSold, setMarkingSold] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -113,6 +121,36 @@ export default function Messages() {
     (p) => p._id !== user?._id
   );
 
+  const listing = activeConversation?.listingId;
+  const isSeller = user && listing && (listing.sellerId?._id === user._id || listing.sellerId === user._id);
+  const isSold = listing?.status === 'sold';
+
+  // Seller Action: Mark as Sold & Request Buyer Rating
+  const handleMarkAsSold = async () => {
+    if (!listing?._id || !activeConvId) return;
+
+    const confirmMsg = `Mark "${listing.title}" as SOLD to ${otherParticipant?.firstName || 'this buyer'} and send a review request?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setMarkingSold(true);
+    try {
+      const res = await api.post(`/listings/${listing._id}/mark-sold-request-rating`, {
+        conversationId: activeConvId,
+        buyerId: otherParticipant?._id
+      });
+
+      if (res.success) {
+        alert(`Success! "${listing.title}" has been marked as SOLD and removed from the marketplace catalog.`);
+        fetchConversations();
+        fetchActiveMessages(activeConvId);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to mark item as sold.');
+    } finally {
+      setMarkingSold(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden h-[75vh] flex flex-col md:flex-row">
@@ -182,7 +220,7 @@ export default function Messages() {
 
                       {conv.listingId?.title && (
                         <span className="text-[11px] font-semibold text-safegreen-700 truncate block mt-0.5">
-                          🏷️ {conv.listingId.title}
+                          🏷️ {conv.listingId.title} {conv.listingId.status === 'sold' ? '(SOLD)' : ''}
                         </span>
                       )}
 
@@ -208,7 +246,7 @@ export default function Messages() {
           {activeConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white z-10">
+              <div className="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white z-10">
                 <div className="flex items-center gap-3">
                   {otherParticipant?.profileImage ? (
                     <img
@@ -229,19 +267,70 @@ export default function Messages() {
                   </div>
                 </div>
 
-                {/* Listing preview banner at top */}
-                {activeConversation.listingId && (
-                  <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                    <Package className="w-4 h-4 text-safegreen-600 flex-shrink-0" />
-                    <span className="font-semibold text-slate-800 max-w-[200px] truncate">
-                      {activeConversation.listingId.title}
+                {/* Right side actions in header */}
+                <div className="flex items-center gap-2">
+                  {listing && (
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
+                      <Package className="w-4 h-4 text-safegreen-600 flex-shrink-0" />
+                      <span className="font-semibold text-slate-800 max-w-[150px] sm:max-w-[200px] truncate">
+                        {listing.title}
+                      </span>
+                      <span className="font-bold text-safegreen-800">
+                        ₱{listing.price?.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Seller Action Button: Mark as Sold & Request Rating */}
+                  {isSeller && !isSold && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAsSold}
+                      disabled={markingSold}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{markingSold ? 'Updating...' : 'Mark Sold & Request Rating'}</span>
+                    </button>
+                  )}
+
+                  {isSeller && isSold && (
+                    <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                      ✅ Marked as SOLD
                     </span>
-                    <span className="font-bold text-safegreen-800">
-                      ₱{activeConversation.listingId.price?.toLocaleString()}
+                  )}
+
+                  {/* Buyer Action Button: Rate Seller */}
+                  {!isSeller && (
+                    <button
+                      type="button"
+                      onClick={() => setRatingModalOpen(true)}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                    >
+                      <Star className="w-4 h-4 fill-amber-300" />
+                      <span>Rate Seller</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Transaction / Rating Request Banner for Buyer */}
+              {!isSeller && isSold && (
+                <div className="bg-emerald-50 px-4 py-2.5 border-b border-emerald-200 flex items-center justify-between text-xs text-emerald-900">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-500 flex-shrink-0" />
+                    <span>
+                      Seller marked <strong>"{listing?.title}"</strong> as <strong>SOLD</strong> to you! Please leave a review for <strong>{otherParticipant?.firstName}</strong>.
                     </span>
                   </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => setRatingModalOpen(true)}
+                    className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg shadow-xs flex-shrink-0"
+                  >
+                    Rate Seller Now ⭐
+                  </button>
+                </div>
+              )}
 
               {/* Safety notice in chat */}
               <div className="bg-amber-50/80 px-4 py-2 border-b border-amber-200 text-center text-xs text-amber-800 font-medium">
@@ -261,6 +350,7 @@ export default function Messages() {
                 ) : (
                   messages.map((msg) => {
                     const isMe = msg.sender?._id === user?._id || msg.sender === user?._id;
+                    const isSystemRatingMsg = msg.text && msg.text.includes('TRANSACTION COMPLETED');
 
                     return (
                       <div
@@ -269,12 +359,25 @@ export default function Messages() {
                       >
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-xs ${
-                            isMe
+                            isSystemRatingMsg
+                              ? 'bg-amber-100 text-amber-950 border border-amber-300 rounded-xl'
+                              : isMe
                               ? 'bg-safegreen-600 text-white rounded-br-xs'
                               : 'bg-white text-slate-800 border border-slate-200 rounded-bl-xs'
                           }`}
                         >
                           <p className="whitespace-pre-wrap">{msg.text}</p>
+                          
+                          {/* If system rating request message and reader is buyer, show button right inside message */}
+                          {isSystemRatingMsg && !isSeller && (
+                            <button
+                              onClick={() => setRatingModalOpen(true)}
+                              className="mt-2 w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5"
+                            >
+                              <Star className="w-4 h-4 fill-amber-300" />
+                              <span>Click Here to Rate {otherParticipant?.firstName}</span>
+                            </button>
+                          )}
                         </div>
                         <span className="text-[10px] text-slate-400 mt-1 px-1">
                           {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -323,6 +426,19 @@ export default function Messages() {
         </div>
 
       </div>
+
+      {/* Rating Modal */}
+      <RatingModal
+        isOpen={ratingModalOpen}
+        onClose={() => setRatingModalOpen(false)}
+        sellerId={otherParticipant?._id}
+        sellerName={`${otherParticipant?.firstName || ''} ${otherParticipant?.lastName || ''}`}
+        listingId={listing?._id}
+        onRatingSuccess={() => {
+          fetchConversations();
+          fetchActiveMessages(activeConvId);
+        }}
+      />
     </div>
   );
 }

@@ -327,7 +327,16 @@ export default function ProductDetail() {
 
             {/* Action Buttons */}
             <div className="pt-2 space-y-2.5">
-              {!isOwner ? (
+              {listing.status === 'sold' ? (
+                <div className="p-4 bg-slate-100 border border-slate-300 rounded-2xl text-center space-y-1 shadow-inner">
+                  <span className="font-extrabold text-slate-800 text-sm uppercase tracking-wider block">
+                    🔴 ITEM SOLD OUT
+                  </span>
+                  <p className="text-xs text-slate-500">
+                    This item was marked as sold following a successful transaction and is no longer available on the marketplace catalog.
+                  </p>
+                </div>
+              ) : !isOwner ? (
                 <>
                   <button
                     type="button"

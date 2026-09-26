@@ -453,3 +453,88 @@ exports.deleteListing = async (req, res) => {
     });
   }
 };
+
+/**
+ * @route   POST /api/listings/:id/mark-sold-request-rating
+ * @desc    Mark item as SOLD and send a rating request prompt to buyer in chat
+ */
+exports.markSoldAndRequestRating = async (req, res) => {
+  try {
+    const listingId = req.params.id;
+    const sellerId = req.user._id;
+    const { conversationId, buyerId } = req.body;
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return res.status(404).json({ success: false, message: 'Listing not found.' });
+    }
+
+    if (listing.sellerId.toString() !== sellerId.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only the seller can mark this item as sold.' });
+    }
+
+    // Update listing status to 'sold' (removes it from marketplace browser catalog)
+    listing.status = 'sold';
+    await listing.save();
+
+    // If conversationId is provided, post system message & notify buyer
+    if (conversationId) {
+      const conversation = await Conversation.findById(conversationId);
+      if (conversation) {
+        const targetBuyerId = buyerId || conversation.participants.find(p => p.toString() !== sellerId.toString());
+
+        // Create automated system message in chat
+        const systemMessageText = `🎉 TRANSACTION COMPLETED! Seller marked "${listing.title}" as SOLD. Buyer: Please click below to rate your experience with ${req.user.firstName}!`;
+
+        const msg = await Message.create({
+          conversationId: conversation._id,
+          sender: sellerId,
+          receiver: targetBuyerId,
+          listingId: listing._id,
+          text: systemMessageText
+        });
+
+        conversation.lastMessage = {
+          text: systemMessageText,
+          sender: sellerId,
+          createdAt: msg.createdAt
+        };
+        await conversation.save();
+
+        // Create notification for buyer
+        if (targetBuyerId) {
+          await Notification.create({
+            recipientId: targetBuyerId,
+            senderId: sellerId,
+            type: 'rating',
+            title: '⭐ Please Rate Your Seller!',
+            message: `${req.user.firstName} marked "${listing.title}" as SOLD to you. Please rate your meetup experience!`,
+            link: `/messages?conversationId=${conversation._id}&openRating=true`
+          });
+        }
+      }
+    }
+
+    await logActivity({
+      userId: sellerId,
+      userEmail: req.user.email,
+      action: 'LISTING_MARKED_SOLD',
+      targetType: 'Listing',
+      targetId: listing._id,
+      details: { title: listing.title, conversationId },
+      ip: req.ip
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Item marked as SOLD and rating request sent to buyer!',
+      listing
+    });
+  } catch (error) {
+    console.error('markSoldAndRequestRating error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark item as sold.'
+    });
+  }
+};
