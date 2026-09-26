@@ -55,7 +55,7 @@ export default function ProductDetail() {
     window.scrollTo(0, 0);
   }, [id]);
 
-  const handleStartMessage = async () => {
+  const handleStartMessage = async (customMessage = null) => {
     if (!user) {
       navigate('/login', { state: { from: { pathname: `/product/${id}` } } });
       return;
@@ -67,11 +67,13 @@ export default function ProductDetail() {
     }
 
     setMsgLoading(true);
+    const defaultMsg = `Hi ${listing.sellerId.firstName}! I am interested in buying "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`;
+    
     try {
       const res = await api.post('/messages/start', {
         receiverId: listing.sellerId._id,
         listingId: listing._id,
-        initialMessage: `Hi ${listing.sellerId.firstName}! Is "${listing.title}" still available for meetup in ${listing.location?.cityMunicipality}?`
+        initialMessage: typeof customMessage === 'string' && customMessage.trim() ? customMessage : defaultMsg
       });
 
       if (res.success && res.conversation) {
@@ -325,12 +327,22 @@ export default function ProductDetail() {
                 <>
                   <button
                     type="button"
-                    onClick={handleStartMessage}
+                    onClick={() => handleStartMessage(`Hi ${seller.firstName}! 🙋‍♂️ I am interested in buying your "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`)}
                     disabled={msgLoading}
-                    className="w-full py-3 px-4 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-sm rounded-xl shadow-md shadow-safegreen-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3.5 px-4 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-sm rounded-xl shadow-md shadow-safegreen-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span>{msgLoading ? 'Connecting...' : 'Message Seller'}</span>
+                    <span>{msgLoading ? 'Connecting...' : "🙋‍♂️ I'm Interested! Send Inquiry"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleStartMessage(`Hi ${seller.firstName}! 📍 I would like to inspect and meet up for your "${listing.title}" (${formattedPrice}) in a safe commercial mall in ${listing.location?.cityMunicipality || 'your area'}. What day works best for you?`)}
+                    disabled={msgLoading}
+                    className="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-safegreen-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-safegreen-600" />
+                    <span>Propose Safe Meetup in Mall</span>
                   </button>
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
