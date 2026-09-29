@@ -36,7 +36,9 @@ export default function Login() {
     } catch (err) {
       if (err.requiresVerification) {
         // Redirect to OTP verification screen
-        navigate(`/verify-otp?email=${encodeURIComponent(err.email || loginId)}`);
+        navigate(`/verify-otp?email=${encodeURIComponent(err.email || loginId)}`, {
+          state: { email: err.email || loginId, otpCode: err.otpCode }
+        });
       } else {
         setError(err.message || 'Invalid username/email or password.');
       }

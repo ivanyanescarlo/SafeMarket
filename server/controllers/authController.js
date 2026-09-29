@@ -128,13 +128,13 @@ exports.register = async (req, res) => {
       ip: req.ip
     });
 
-    // Do NOT expose OTP in response
     res.status(201).json({
       success: true,
-      message: 'Account registered! Please enter the 6-digit OTP code sent to your email.',
+      message: 'Account registered! Your 6-digit OTP code has been generated and dispatched.',
       userId: user._id,
       email: user.email,
-      mobileNumber: user.mobileNumber
+      mobileNumber: user.mobileNumber,
+      otpCode: user.otpCode
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -306,7 +306,8 @@ exports.resendOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'A new 6-digit verification code has been dispatched.'
+      message: 'A new 6-digit verification code has been dispatched.',
+      otpCode: newOtp
     });
   } catch (error) {
     console.error('Resend OTP error:', error);
@@ -392,6 +393,7 @@ exports.login = async (req, res) => {
         success: false,
         requiresVerification: true,
         email: user.email,
+        otpCode: user.otpCode,
         message: 'Your account is pending OTP verification. A verification code has been dispatched.'
       });
     }

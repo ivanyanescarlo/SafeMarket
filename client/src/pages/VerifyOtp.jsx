@@ -73,6 +73,9 @@ export default function VerifyOtp() {
     try {
       const data = await resendOtp(email);
       setSuccessMsg(data.message || 'A new 6-digit code has been dispatched to your email/mobile.');
+      if (data.otpCode) {
+        setOtp(data.otpCode);
+      }
       setTimer(60); // reset timer
     } catch (err) {
       setError(err.message || 'Failed to resend OTP.');
@@ -101,6 +104,21 @@ export default function VerifyOtp() {
         <p className="text-sm font-bold text-slate-800 mt-0.5 truncate">
           {email || 'your registered contact'}
         </p>
+
+        {/* Verification Code Active Banner */}
+        {otp && otp.length === 6 && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-center shadow-xs">
+            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block mb-1">
+              🔑 Verification Code:
+            </span>
+            <span className="text-2xl font-extrabold font-mono tracking-[0.3em] text-emerald-700 block">
+              {otp}
+            </span>
+            <span className="text-[10px] text-emerald-700 block mt-1">
+              Dispatched to {email}. Code pre-filled below for fast activation!
+            </span>
+          </div>
+        )}
 
         {/* Success Feedback */}
         {successMsg && (

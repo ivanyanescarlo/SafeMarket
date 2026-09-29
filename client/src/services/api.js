@@ -32,7 +32,9 @@ export async function request(endpoint, options = {}) {
         localStorage.removeItem('safemarket_token');
         localStorage.removeItem('safemarket_user');
       }
-      throw new Error(data.message || `Request failed with status ${res.status}`);
+      const err = new Error(data.message || `Request failed with status ${res.status}`);
+      Object.assign(err, data);
+      throw err;
     }
 
     return data;
