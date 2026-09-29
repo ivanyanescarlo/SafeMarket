@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, Eye, EyeOff, UserPlus, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -22,49 +22,91 @@ export default function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [invalidField, setInvalidField] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Field Refs for auto-focusing on invalid inputs
+  const firstNameRef = useRef(null);
+  const lastNameRef = useRef(null);
+  const usernameRef = useRef(null);
+  const mobileRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (invalidField === name) {
+      setInvalidField('');
+    }
   };
 
   const handleLocationChange = ({ province, cityMunicipality }) => {
     setFormData((prev) => ({ ...prev, province, cityMunicipality }));
+    if (invalidField === 'location') setInvalidField('');
+  };
+
+  const focusField = (field, ref, message) => {
+    setError(message);
+    setInvalidField(field);
+    if (ref && ref.current) {
+      ref.current.focus();
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInvalidField('');
 
-    const cleanMobileDigits = rawMobileNumber.replace(/\D/g, '');
-    if (cleanMobileDigits.length !== 10) {
-      setError('Please enter a valid 10-digit Philippine mobile number after +63.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!formData.firstName.trim()) {
+      focusField('firstName', firstNameRef, 'Please enter your First Name.');
       return;
     }
 
-    const fullMobileNumber = `+63${cleanMobileDigits}`;
+    if (!formData.lastName.trim()) {
+      focusField('lastName', lastNameRef, 'Please enter your Last Name.');
+      return;
+    }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!formData.username.trim()) {
+      focusField('username', usernameRef, 'Please enter a Username.');
+      return;
+    }
+
+    const cleanMobileDigits = rawMobileNumber.replace(/\D/g, '');
+    if (cleanMobileDigits.length !== 10) {
+      focusField('mobile', mobileRef, 'Please enter a valid 10-digit Philippine mobile number after +63.');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      focusField('email', emailRef, 'Please enter your Email Address.');
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      focusField('password', passwordRef, 'Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      focusField('confirmPassword', confirmPasswordRef, 'Passwords do not match.');
       return;
     }
 
     if (!formData.province || !formData.cityMunicipality) {
-      setError('Please select both your Province and City/Municipality.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      focusField('location', null, 'Please select both your Province and City/Municipality.');
       return;
     }
 
+    const fullMobileNumber = `+63${cleanMobileDigits}`;
     setLoading(true);
 
     try {
@@ -74,8 +116,15 @@ export default function Register() {
         navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
       }
     } catch (err) {
-      setError(err.message || 'Registration failed. Please check your information.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const msg = err.message || 'Registration failed. Please check your information.';
+      setError(msg);
+      if (msg.toLowerCase().includes('username')) {
+        focusField('username', usernameRef, msg);
+      } else if (msg.toLowerCase().includes('email')) {
+        focusField('email', emailRef, msg);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } finally {
       setLoading(false);
     }
@@ -120,13 +169,18 @@ export default function Register() {
                   First Name <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
+                  ref={firstNameRef}
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
                   required
                   placeholder="First name"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                    invalidField === 'firstName'
+                      ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                  }`}
                 />
               </div>
 
@@ -135,13 +189,18 @@ export default function Register() {
                   Last Name <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
+                  ref={lastNameRef}
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
                   required
                   placeholder="Last name"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                    invalidField === 'lastName'
+                      ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                  }`}
                 />
               </div>
             </div>
@@ -152,13 +211,18 @@ export default function Register() {
                   Username <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
+                  ref={usernameRef}
                   type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                   required
                   placeholder="Username"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                    invalidField === 'username'
+                      ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                  }`}
                 />
               </div>
 
@@ -171,6 +235,7 @@ export default function Register() {
                     +63
                   </span>
                   <input
+                    ref={mobileRef}
                     type="tel"
                     value={rawMobileNumber}
                     onChange={(e) => {
@@ -178,10 +243,15 @@ export default function Register() {
                       if (val.startsWith('0')) val = val.substring(1);
                       if (val.startsWith('63')) val = val.substring(2);
                       if (val.length <= 10) setRawMobileNumber(val);
+                      if (invalidField === 'mobile') setInvalidField('');
                     }}
                     required
                     placeholder="9171234567"
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-r-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 font-bold"
+                    className={`w-full px-3.5 py-2.5 bg-white border rounded-r-lg text-sm text-slate-800 focus:outline-none focus:ring-2 font-bold transition-all ${
+                      invalidField === 'mobile'
+                        ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-300 focus:ring-safegreen-500'
+                    }`}
                   />
                 </div>
               </div>
@@ -192,29 +262,39 @@ export default function Register() {
                 Email Address <span className="text-rose-500 font-bold ml-0.5">*</span>
               </label>
               <input
+                ref={emailRef}
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
                 placeholder="Email address"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
+                className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                  invalidField === 'email'
+                    ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                    : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                }`}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="relative">
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Password (Min. 8 chars) <span className="text-rose-500 font-bold ml-0.5">*</span>
+                  Password <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
+                  ref={passwordRef}
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
                   placeholder="At least 8 characters"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 pr-10"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 pr-10 transition-all ${
+                    invalidField === 'password'
+                      ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                  }`}
                 />
                 <button
                   type="button"
@@ -225,19 +305,31 @@ export default function Register() {
                 </button>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Confirm Password <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  ref={confirmPasswordRef}
+                  type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
                   placeholder="Confirm password"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 pr-10 transition-all ${
+                    invalidField === 'confirmPassword'
+                      ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
+                  }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-8 text-slate-400 hover:text-slate-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
           </div>
