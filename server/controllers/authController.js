@@ -263,7 +263,7 @@ exports.verifyOtp = async (req, res) => {
  */
 exports.resendOtp = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, channel } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -292,9 +292,18 @@ exports.resendOtp = async (req, res) => {
     user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     await user.save();
 
-    // Send OTP via Email and SMS
-    await sendOtpEmail(user.email, newOtp, user.firstName);
-    await sendSmsOtp(user.mobileNumber, newOtp, user.firstName);
+    let dispatchMsg = '';
+    if (channel === 'email') {
+      await sendOtpEmail(user.email, newOtp, user.firstName);
+      dispatchMsg = `A new 6-digit verification code has been sent to your email (${user.email}).`;
+    } else if (channel === 'sms') {
+      await sendSmsOtp(user.mobileNumber, newOtp, user.firstName);
+      dispatchMsg = `A new 6-digit verification code has been sent via SMS to your mobile number (${user.mobileNumber}).`;
+    } else {
+      await sendOtpEmail(user.email, newOtp, user.firstName);
+      await sendSmsOtp(user.mobileNumber, newOtp, user.firstName);
+      dispatchMsg = `A new 6-digit verification code has been dispatched to both your email and mobile phone (${user.mobileNumber}).`;
+    }
 
     await logActivity({
       userId: user._id,
@@ -302,13 +311,13 @@ exports.resendOtp = async (req, res) => {
       action: 'OTP_RESENT',
       targetType: 'User',
       targetId: user._id,
-      details: {},
+      details: { channel: channel || 'both' },
       ip: req.ip
     });
 
     res.status(200).json({
       success: true,
-      message: 'A new 6-digit verification code has been dispatched to your email and mobile phone.'
+      message: dispatchMsg
     });
   } catch (error) {
     console.error('Resend OTP error:', error);

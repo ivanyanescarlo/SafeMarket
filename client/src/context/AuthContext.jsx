@@ -66,8 +66,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const resendOtp = async (email) => {
-    return await api.post('/auth/resend-otp', { email });
+  const resendOtp = async (email, channel = 'both') => {
+    return await api.post('/auth/resend-otp', { email, channel });
   };
 
   const logout = () => {
