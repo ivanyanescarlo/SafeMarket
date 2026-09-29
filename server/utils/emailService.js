@@ -29,32 +29,22 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
   }
 
   try {
-    const transporter = nodemailer.createTransport(
-      process.env.EMAIL_SERVICE
-        ? {
-            service: service,
-            auth: { user, pass },
-            connectionTimeout: 4000,
-            greetingTimeout: 4000,
-            socketTimeout: 6000
-          }
-        : {
-            host: host,
-            port: port,
-            secure: port === 465,
-            auth: { user, pass },
-            connectionTimeout: 4000,
-            greetingTimeout: 4000,
-            socketTimeout: 6000
-          }
-    );
+    // Primary transporter using built-in Gmail service (SSL port 465)
+    let transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || 'gmail',
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 12000,
+      greetingTimeout: 12000,
+      socketTimeout: 15000
+    });
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || `"SafeMarket Philippines" <${user}>`,
       to: toEmail,
       subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; rounded: 16px; background-color: #ffffff;">
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
           <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #059669;">
             <h1 style="color: #059669; margin: 0; font-size: 24px;">🛡️ SafeMarket</h1>
             <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Secure Local Online Marketplace</p>
@@ -90,12 +80,29 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    let info;
+    try {
+      info = await transporter.sendMail(mailOptions);
+    } catch (primaryErr) {
+      console.warn(`[Email Service Warning] Primary Gmail service connection failed (${primaryErr.message}). Retrying with direct SSL port 465 fallback...`);
+      const fallbackTransporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000
+      });
+      info = await fallbackTransporter.sendMail(mailOptions);
+    }
+
     console.log(`[Email Service] Real OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
     return { success: true, delivered: true, messageId: info.messageId };
   } catch (err) {
     console.error(`[Email Service Error] Failed to send real email:`, err.message);
-    // Return success: true so user flow isn't blocked, code remains available in terminal
+    // Return success: true so user flow isn't blocked, code remains available in terminal/banner
     return { success: true, delivered: false, error: err.message, mode: 'terminal_fallback' };
   }
 };
