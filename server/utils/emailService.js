@@ -1,3 +1,4 @@
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 
 /**
@@ -7,8 +8,8 @@ const nodemailer = require('nodemailer');
  * @param {string} firstName - User's first name
  */
 const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  const user = process.env.EMAIL_USER || 'ivro.yanes.up@phinmaed.com';
+  const pass = process.env.EMAIL_PASS || 'qrsfojwkonhpgehi';
   const service = process.env.EMAIL_SERVICE || 'gmail';
   const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.EMAIL_PORT || '587', 10);
