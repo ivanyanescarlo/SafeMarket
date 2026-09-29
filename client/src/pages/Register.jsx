@@ -43,6 +43,10 @@ export default function Register() {
       // Disallow numbers and special characters in first/last names (only letters, spaces, hyphens, and apostrophes)
       cleanValue = value.replace(/[^a-zA-Z\s\'-]/g, '');
     }
+    if (name === 'password' || name === 'confirmPassword') {
+      // Disallow spaces in password fields entirely
+      cleanValue = value.replace(/\s/g, '');
+    }
     setFormData((prev) => ({ ...prev, [name]: cleanValue }));
     if (invalidField === name) {
       setInvalidField('');
@@ -119,9 +123,9 @@ export default function Register() {
     try {
       const data = await register({ ...formData, mobileNumber: fullMobileNumber });
       if (data.success) {
-        // Redirect to OTP verification screen with user email and optional otpCode state fallback
+        // Redirect to OTP verification screen (OTP code dispatched to user email inbox only)
         navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`, {
-          state: { email: data.email, otpCode: data.otpCode }
+          state: { email: data.email }
         });
       }
     } catch (err) {

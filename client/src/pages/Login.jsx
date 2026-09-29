@@ -37,7 +37,7 @@ export default function Login() {
       if (err.requiresVerification) {
         // Redirect to OTP verification screen
         navigate(`/verify-otp?email=${encodeURIComponent(err.email || loginId)}`, {
-          state: { email: err.email || loginId, otpCode: err.otpCode }
+          state: { email: err.email || loginId }
         });
       } else {
         setError(err.message || 'Invalid username/email or password.');
@@ -105,7 +105,7 @@ export default function Login() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
                 required
                 placeholder="Enter password"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 pr-10 transition-all"
