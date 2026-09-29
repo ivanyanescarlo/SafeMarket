@@ -41,6 +41,7 @@ export default function Register() {
     const cleanMobileDigits = rawMobileNumber.replace(/\D/g, '');
     if (cleanMobileDigits.length !== 10) {
       setError('Please enter a valid 10-digit Philippine mobile number after +63.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -48,16 +49,19 @@ export default function Register() {
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (!formData.province || !formData.cityMunicipality) {
       setError('Please select both your Province and City/Municipality.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -71,6 +75,7 @@ export default function Register() {
       }
     } catch (err) {
       setError(err.message || 'Registration failed. Please check your information.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -112,7 +117,7 @@ export default function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  First Name
+                  First Name <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -127,7 +132,7 @@ export default function Register() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Last Name
+                  Last Name <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -144,7 +149,7 @@ export default function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Username
+                  Username <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
@@ -159,7 +164,7 @@ export default function Register() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Mobile Number
+                  Mobile Number <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="flex items-center">
                   <span className="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-sm font-bold text-slate-700 select-none">
@@ -184,7 +189,7 @@ export default function Register() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Email Address
+                Email Address <span className="text-rose-500 font-bold ml-0.5">*</span>
               </label>
               <input
                 type="email"
@@ -200,7 +205,7 @@ export default function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="relative">
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Password
+                  Password (Min. 8 chars) <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -208,7 +213,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  placeholder="Password"
+                  placeholder="At least 8 characters"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 pr-10"
                 />
                 <button
@@ -222,7 +227,7 @@ export default function Register() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Confirm Password
+                  Confirm Password <span className="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
                 <input
                   type={showPassword ? 'text' : 'password'}

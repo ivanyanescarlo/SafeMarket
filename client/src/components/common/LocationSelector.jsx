@@ -93,6 +93,7 @@ function CustomScrollDropdown({
     <div className="relative" ref={dropdownRef}>
       <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
         {label}
+        {required && <span className="text-rose-500 font-bold ml-1">*</span>}
       </label>
 
       {/* Trigger Button */}
