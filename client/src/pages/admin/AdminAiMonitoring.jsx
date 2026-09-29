@@ -60,11 +60,8 @@ export default function AdminAiMonitoring({ onAction }) {
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-safegreen-600" />
-            <span>Gemini AI Scam Risk Monitoring</span>
+            <span>AI Risk Monitor</span>
           </h2>
-          <p className="text-xs text-slate-500">
-            Proactively monitor items flagged with High or Medium risk indicators by the AI Risk Analyzer
-          </p>
         </div>
 
         <select
@@ -124,7 +121,6 @@ export default function AdminAiMonitoring({ onAction }) {
 
                     <Link
                       to={`/product/${item._id}`}
-                      target="_blank"
                       className="text-sm font-bold text-slate-900 hover:text-safegreen-700 mt-1 block"
                     >
                       {item.title}
@@ -145,7 +141,6 @@ export default function AdminAiMonitoring({ onAction }) {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Link
                     to={`/product/${item._id}`}
-                    target="_blank"
                     className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl"
                   >
                     View Listing

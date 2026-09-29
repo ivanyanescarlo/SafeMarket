@@ -475,6 +475,7 @@ exports.markSoldAndRequestRating = async (req, res) => {
 
     // Update listing status to 'sold' (removes it from marketplace browser catalog)
     listing.status = 'sold';
+    listing.soldAt = new Date();
     await listing.save();
 
     // If conversationId is provided, post system message & notify buyer

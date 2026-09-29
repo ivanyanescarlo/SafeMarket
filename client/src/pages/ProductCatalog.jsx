@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Navigate } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -12,6 +12,7 @@ import api from '../services/api';
 import ListingCard from '../components/listing/ListingCard';
 import LocationSelector from '../components/common/LocationSelector';
 import CustomSelect from '../components/common/CustomSelect';
+import { useAuth } from '../context/AuthContext';
 
 const CATEGORIES = [
   'All',
@@ -39,6 +40,11 @@ const CONDITIONS = [
 const RISK_LEVELS = ['All', 'Low', 'Medium', 'High'];
 
 export default function ProductCatalog() {
+  const { isAdmin } = useAuth();
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter States initialized from URL
@@ -125,31 +131,34 @@ export default function ProductCatalog() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Header & Search Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Second-Hand Catalog
+          <span className="text-xs font-bold uppercase tracking-wider text-safegreen-700 bg-safegreen-50 border border-safegreen-200 px-3 py-1 rounded-full">
+            Philippine Second-Hand Marketplace
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-2">
+            Verified Item Catalog
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Showing <strong className="text-slate-800">{total}</strong> verified items in the Philippine marketplace
+            Browse <strong className="text-slate-900 font-extrabold">{total}</strong> active items screened with Gemini AI scam prevention.
           </p>
         </div>
 
         {/* Search input in catalog */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-96">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-[420px]">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by keywords..."
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-xs"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-2xs"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
+            className="px-5 py-3 bg-safegreen-600 hover:bg-safegreen-700 text-white font-extrabold text-sm rounded-2xl shadow-md shadow-safegreen-200 transition-all"
           >
             Find
           </button>
@@ -157,7 +166,7 @@ export default function ProductCatalog() {
           <button
             type="button"
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-            className="md:hidden p-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200"
+            className="md:hidden p-3 bg-slate-100 text-slate-700 rounded-2xl hover:bg-slate-200"
           >
             <SlidersHorizontal className="w-5 h-5" />
           </button>
@@ -167,7 +176,7 @@ export default function ProductCatalog() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Filters Sidebar */}
-        <div className={`md:block ${mobileFilterOpen ? 'block' : 'hidden'} md:col-span-1 space-y-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs`}>
+        <div className={`md:block ${mobileFilterOpen ? 'block' : 'hidden'} md:col-span-1 space-y-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
               <Filter className="w-4 h-4 text-safegreen-600" />

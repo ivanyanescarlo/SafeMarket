@@ -65,9 +65,6 @@ export default function AdminReports({ onAction }) {
             <Flag className="w-5 h-5 text-rose-600" />
             <span>Community Scam & Safety Reports</span>
           </h2>
-          <p className="text-xs text-slate-500">
-            Investigate suspicious listings reported by buyers and enforce community safety
-          </p>
         </div>
 
         <select
@@ -112,7 +109,6 @@ export default function AdminReports({ onAction }) {
                         <div>
                           <Link
                             to={`/product/${listing._id}`}
-                            target="_blank"
                             className="font-bold text-slate-900 hover:text-safegreen-700 block text-xs"
                           >
                             {listing.title}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, AlertCircle, CheckCircle, RotateCcw, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle, RotateCcw, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import safeMarketLogo from '../assets/safemarket_logo.png';
 
 export default function VerifyOtp() {
   const { verifyOtp, resendOtp } = useAuth();
@@ -78,10 +79,12 @@ export default function VerifyOtp() {
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200/90 p-8 sm:p-10 text-center">
         
-        {/* Icon */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 text-safegreen-700 shadow-sm mb-4">
-          <ShieldCheck className="w-9 h-9" />
-        </div>
+        {/* Logo */}
+        <img
+          src={safeMarketLogo}
+          alt="SafeMarket Logo"
+          className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4"
+        />
 
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
           Verify Your Account

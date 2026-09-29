@@ -1,5 +1,6 @@
 const Rating = require('../models/Rating');
 const User = require('../models/User');
+const Listing = require('../models/Listing');
 const Notification = require('../models/Notification');
 const Conversation = require('../models/Conversation');
 const { logActivity } = require('../utils/logger');
@@ -13,10 +14,17 @@ exports.createRating = async (req, res) => {
     const { sellerId, listingId, rating, feedback } = req.body;
     const buyerId = req.user._id;
 
-    if (!sellerId || !rating) {
+    if (!sellerId || rating === undefined || rating === null) {
       return res.status(400).json({
         success: false,
-        message: 'Seller ID and rating (1-5) are required.'
+        message: 'Seller ID and a rating between 1 and 5 are required.'
+      });
+    }
+
+    if (Number(rating) < 1 || Number(rating) > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a valid rating from 1 to 5 stars.'
       });
     }
 
@@ -84,13 +92,23 @@ exports.createRating = async (req, res) => {
     seller.ratingCount = allRatings.length;
     await seller.save();
 
-    // Create notification for seller
+    // Fetch listing title if available for rich notification detail
+    let listingTitle = '';
+    if (listingId) {
+      const listing = await Listing.findById(listingId);
+      if (listing) listingTitle = listing.title;
+    }
+
+    const raterName = `${req.user.firstName} ${req.user.lastName}`.trim();
+    const itemText = listingTitle ? ` for "${listingTitle}"` : '';
+
+    // Create notification for seller ONLY (recipientId: sellerId)
     await Notification.create({
       recipientId: sellerId,
       senderId: buyerId,
       type: 'rating',
-      title: 'New Seller Rating Received',
-      message: `${req.user.firstName} gave you a ${rating}-star rating!`,
+      title: '⭐ New Rating Received',
+      message: `${raterName} rated you ${rating} stars${itemText}.`,
       link: `/profile/${sellerId}`
     });
 

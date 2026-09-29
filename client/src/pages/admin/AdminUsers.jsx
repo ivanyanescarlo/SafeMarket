@@ -88,9 +88,6 @@ export default function AdminUsers({ onAction }) {
           <h2 className="text-lg font-bold text-slate-900">
             User Account Management
           </h2>
-          <p className="text-xs text-slate-500">
-            Monitor accounts, review verification, and manage community access
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">

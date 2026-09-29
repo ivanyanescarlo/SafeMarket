@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, AlertCircle, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import safeMarketLogo from '../assets/safemarket_logo.png';
 
 export default function Login() {
   const { login } = useAuth();
@@ -50,9 +51,11 @@ export default function Login() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-safegreen-700 to-safegreen-500 text-white shadow-md shadow-safegreen-200 mb-4">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
+          <img
+            src={safeMarketLogo}
+            alt="SafeMarket Logo"
+            className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4"
+          />
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Welcome to SafeMarket
           </h2>
@@ -78,7 +81,7 @@ export default function Login() {
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
               required
-              placeholder="e.g. maria@safemarket.ph or maria_seller"
+              placeholder="Email address or username"
               className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 transition-all"
             />
           </div>
@@ -132,37 +135,6 @@ export default function Login() {
             </button>
           </div>
         </form>
-
-        {/* Demo Credentials Box for Evaluation */}
-        <div className="mt-6 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
-          <p className="font-bold text-slate-800">Quick Test Credentials:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 pt-1 text-[11px]">
-            <button
-              type="button"
-              onClick={() => { setLoginId('admin@safemarket.ph'); setPassword('Admin123!'); }}
-              className="p-1 rounded bg-white border border-slate-200 hover:border-purple-400 hover:bg-purple-50 text-left font-medium"
-            >
-              <span className="font-bold text-purple-700 block">Admin</span>
-              admin@safemarket.ph
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginId('maria@safemarket.ph'); setPassword('Password123!'); }}
-              className="p-1 rounded bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-left font-medium"
-            >
-              <span className="font-bold text-emerald-700 block">Seller</span>
-              maria@safemarket.ph
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginId('carlo@safemarket.ph'); setPassword('Password123!'); }}
-              className="p-1 rounded bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-left font-medium"
-            >
-              <span className="font-bold text-blue-700 block">Buyer</span>
-              carlo@safemarket.ph
-            </button>
-          </div>
-        </div>
 
         <div className="mt-6 text-center text-xs text-slate-500">
           New to SafeMarket?{' '}

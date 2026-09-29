@@ -4,8 +4,51 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 selection:bg-safegreen-200 selection:text-safegreen-900;
+    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 selection:bg-safegreen-200 selection:text-safegreen-900;
   }
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark header {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html.dark .bg-white {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-300,
+html.dark .border-slate-100 {
+  border-color: #1e293b !important;
 }
 
 /* Custom scrollbar */

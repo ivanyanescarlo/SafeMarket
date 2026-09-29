@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import {
   ShieldCheck,
   Search,
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import ListingCard from '../components/listing/ListingCard';
+import { useAuth } from '../context/AuthContext';
 
 const POPULAR_CATEGORIES = [
   { name: 'Mobile Phones & Gadgets', label: 'Phones & Gadgets', icon: Smartphone, color: 'bg-blue-50 text-blue-700' },
@@ -33,10 +34,15 @@ const POPULAR_CATEGORIES = [
 ];
 
 export default function Home() {
+  const { isAdmin } = useAuth();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
   const navigate = useNavigate();
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   useEffect(() => {
     const fetchData = async () => {

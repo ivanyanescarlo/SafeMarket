@@ -112,6 +112,7 @@ export default function MyListings() {
                   <th className="py-3.5 px-4">Price</th>
                   <th className="py-3.5 px-4">AI Risk Screening</th>
                   <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Date</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -161,6 +162,20 @@ export default function MyListings() {
                       >
                         {item.status}
                       </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-[11px] text-slate-500 whitespace-nowrap">
+                      {item.status === 'sold' ? (
+                        <>
+                          <span className="font-bold block text-slate-700">Sold:</span>
+                          {new Date(item.soldAt || item.updatedAt).toLocaleDateString()}
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-bold block text-slate-700">Published:</span>
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-right space-x-2">

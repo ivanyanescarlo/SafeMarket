@@ -19,14 +19,57 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      // 1. Fetch system & violation notifications (non-message)
+      // 1. Fetch system, message & violation notifications
       const data = await api.get('/notifications');
-      if (data.success) {
-        // Filter out any historical 'message' type notifications
-        const cleanNotifs = (data.notifications || []).filter(n => n.type !== 'message');
-        setNotifications(cleanNotifs);
-        setUnreadCount(cleanNotifs.filter(n => !n.read).length);
+      let cleanNotifs = (data.notifications || []);
+
+      // If user is Admin, fetch pending reports & high risk AI items for Admin notifications
+      if (user.role === 'admin') {
+        try {
+          const [reportsRes, aiRes] = await Promise.all([
+            api.get('/admin/reports?status=pending'),
+            api.get('/admin/ai-monitoring?riskLevel=High')
+          ]);
+
+          const adminNotifs = [];
+          if (reportsRes.success && reportsRes.reports) {
+            reportsRes.reports.forEach(r => {
+              adminNotifs.push({
+                _id: `rep_${r._id}`,
+                title: '🚨 Community Scam Report',
+                message: `Buyer reported item "${r.listingId?.title || 'Listing'}": ${r.reason || 'Suspicious activity'}`,
+                type: 'violation',
+                read: r.status === 'resolved' || r.status === 'dismissed',
+                createdAt: r.createdAt,
+                link: '/admin'
+              });
+            });
+          }
+
+          if (aiRes.success && aiRes.flaggedListings) {
+            aiRes.flaggedListings.forEach(item => {
+              adminNotifs.push({
+                _id: `ai_${item._id}`,
+                title: '⚠️ High Risk AI Scam Flag',
+                message: `AI detected High Risk indicator on "${item.title}" (₱${item.price?.toLocaleString()}).`,
+                type: 'violation',
+                read: false,
+                createdAt: item.createdAt,
+                link: '/admin'
+              });
+            });
+          }
+
+          cleanNotifs = [...adminNotifs, ...cleanNotifs].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+        } catch (adminErr) {
+          console.error('Failed to load admin notifications:', adminErr);
+        }
       }
+
+      setNotifications(cleanNotifs);
+      setUnreadCount(cleanNotifs.filter(n => !n.read).length);
     } catch (err) {
       // Quiet fail on network hiccups
     }
@@ -46,7 +89,7 @@ export const NotificationProvider = ({ children }) => {
     fetchNotifications();
 
     if (!user) return;
-    const interval = setInterval(fetchNotifications, 12000);
+    const interval = setInterval(fetchNotifications, 3000);
     return () => clearInterval(interval);
   }, [user]);
 

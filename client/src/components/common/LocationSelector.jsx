@@ -1,13 +1,57 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, Check, MapPin } from 'lucide-react';
-import api from '../../services/api';
+import { ChevronDown, Search, Check } from 'lucide-react';
 
-/**
- * CustomScrollDropdown Component
- * Strictly opens DOWNWARDS (top-full mt-1.5 z-50), never pops upwards.
- * Max-height constrained (max-h-56) and scrollable so it never gets too big.
- * Includes quick search filter for Philippine provinces and cities.
- */
+const PANGASINAN_CITIES = [
+  "Agno",
+  "Aguilar",
+  "Alaminos City",
+  "Alcala",
+  "Anda",
+  "Asingan",
+  "Balungao",
+  "Bani",
+  "Basista",
+  "Bautista",
+  "Bayambang",
+  "Binalonan",
+  "Binmaley",
+  "Bolinao",
+  "Bugallon",
+  "Burgos",
+  "Calasiao",
+  "Dagupan City",
+  "Dasol",
+  "Infanta",
+  "Labrador",
+  "Laoac",
+  "Lingayen",
+  "Mabini",
+  "Malasiqui",
+  "Manaoag",
+  "Mangaldan",
+  "Mangatarem",
+  "Mapandan",
+  "Natividad",
+  "Pozorrubio",
+  "Rosales",
+  "San Carlos City",
+  "San Fabian",
+  "San Jacinto",
+  "San Manuel",
+  "San Nicolas",
+  "San Quintin",
+  "Santa Barbara",
+  "Santa Maria",
+  "Santo Tomas",
+  "Sison",
+  "Sual",
+  "Tayug",
+  "Umingan",
+  "Urbiztondo",
+  "Urdaneta City",
+  "Villasis"
+];
+
 function CustomScrollDropdown({
   label,
   value,
@@ -47,7 +91,6 @@ function CustomScrollDropdown({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Label without asterisk */}
       <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
         {label}
       </label>
@@ -75,7 +118,7 @@ function CustomScrollDropdown({
         />
       </button>
 
-      {/* Hidden input for form validation */}
+      {/* Hidden input for HTML form validation */}
       {required && (
         <input
           type="text"
@@ -87,10 +130,10 @@ function CustomScrollDropdown({
         />
       )}
 
-      {/* Downward Popup Dropdown: ALWAYS pops DOWN (top-full mt-1.5), never up */}
+      {/* Popup Dropdown */}
       {isOpen && !disabled && (
         <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in">
-          {/* Quick Search inside dropdown */}
+          {/* Search box inside dropdown */}
           <div className="p-2 border-b border-slate-100 bg-slate-50/80">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -105,7 +148,7 @@ function CustomScrollDropdown({
             </div>
           </div>
 
-          {/* Constrained Scrollable Options List: max-h-56 so it never gets too big */}
+          {/* Scrollable List */}
           <div className="max-h-56 overflow-y-auto divide-y divide-slate-50 overscroll-contain">
             {filteredOptions.length === 0 ? (
               <div className="py-4 text-center text-xs text-slate-400">
@@ -142,90 +185,50 @@ function CustomScrollDropdown({
 }
 
 export default function LocationSelector({
-  selectedProvince = '',
+  selectedProvince = 'Pangasinan',
   selectedCity = '',
   onChange,
   required = false,
   className = ''
 }) {
-  const [locations, setLocations] = useState([]);
-  const [availableCities, setAvailableCities] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+  // Always enforce Pangasinan as the province
   useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const data = await api.get('/locations');
-        if (data.success && data.locations) {
-          setLocations(data.locations);
-
-          // If initial province exists, set cities
-          if (selectedProvince) {
-            const found = data.locations.find(
-              (l) => l.province.toLowerCase() === selectedProvince.toLowerCase()
-            );
-            if (found) {
-              setAvailableCities(found.cities);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load Philippine locations:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLocations();
+    if (selectedProvince !== 'Pangasinan') {
+      onChange({
+        province: 'Pangasinan',
+        cityMunicipality: selectedCity
+      });
+    }
   }, [selectedProvince]);
-
-  const handleProvinceSelect = (prov) => {
-    const found = locations.find((l) => l.province === prov);
-    const cities = found ? found.cities : [];
-    setAvailableCities(cities);
-    // When province changes, select first city or reset
-    onChange({
-      province: prov,
-      cityMunicipality: cities.length > 0 ? cities[0] : ''
-    });
-  };
 
   const handleCitySelect = (city) => {
     onChange({
-      province: selectedProvince,
+      province: 'Pangasinan',
       cityMunicipality: city
     });
   };
 
-  const provinceOptions = locations.map((loc) => loc.province);
-
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-3.5 ${className}`}>
-      {/* Province Dropdown */}
+      {/* Province Dropdown - Fixed to Pangasinan */}
       <CustomScrollDropdown
         label="Province"
-        value={selectedProvince}
-        placeholder={loading ? 'Loading provinces...' : '-- Select Province --'}
-        options={provinceOptions}
-        onSelect={handleProvinceSelect}
-        disabled={loading}
+        value="Pangasinan"
+        placeholder="Pangasinan"
+        options={["Pangasinan"]}
+        onSelect={() => {}}
+        disabled={false}
         required={required}
       />
 
-      {/* City/Municipality Dropdown */}
+      {/* City / Municipality Dropdown - Pangasinan Cities & Municipalities */}
       <CustomScrollDropdown
         label="City / Municipality"
         value={selectedCity}
-        placeholder={
-          !selectedProvince
-            ? '-- Choose Province First --'
-            : availableCities.length === 0
-            ? 'No cities available'
-            : '-- Select City / Municipality --'
-        }
-        options={availableCities}
+        placeholder="Select City / Municipality"
+        options={PANGASINAN_CITIES}
         onSelect={handleCitySelect}
-        disabled={!selectedProvince || availableCities.length === 0}
+        disabled={false}
         required={required}
       />
     </div>

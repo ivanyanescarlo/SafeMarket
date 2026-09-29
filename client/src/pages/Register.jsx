@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertCircle, Eye, EyeOff, UserPlus, MapPin } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, UserPlus, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LocationSelector from '../components/common/LocationSelector';
+import safeMarketLogo from '../assets/safemarket_logo.png';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [rawMobileNumber, setRawMobileNumber] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,9 +17,8 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    mobileNumber: '+63',
-    province: 'Metro Manila (NCR)',
-    cityMunicipality: 'Quezon City'
+    province: 'Pangasinan',
+    cityMunicipality: ''
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +38,14 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
+    const cleanMobileDigits = rawMobileNumber.replace(/\D/g, '');
+    if (cleanMobileDigits.length !== 10) {
+      setError('Please enter a valid 10-digit Philippine mobile number after +63.');
+      return;
+    }
+
+    const fullMobileNumber = `+63${cleanMobileDigits}`;
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -55,7 +64,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const data = await register(formData);
+      const data = await register({ ...formData, mobileNumber: fullMobileNumber });
       if (data.success) {
         // Redirect to OTP verification screen with user email
         navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
@@ -73,9 +82,11 @@ export default function Register() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-safegreen-700 to-safegreen-500 text-white shadow-md shadow-safegreen-200 mb-4">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
+          <img
+            src={safeMarketLogo}
+            alt="SafeMarket Logo"
+            className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4"
+          />
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Join SafeMarket
           </h2>
@@ -109,7 +120,7 @@ export default function Register() {
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  placeholder="e.g. Maria"
+                  placeholder="First name"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
                 />
               </div>
@@ -124,7 +135,7 @@ export default function Register() {
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  placeholder="e.g. Santos"
+                  placeholder="Last name"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
                 />
               </div>
@@ -141,7 +152,7 @@ export default function Register() {
                   value={formData.username}
                   onChange={handleChange}
                   required
-                  placeholder="e.g. maria_santos"
+                  placeholder="Username"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
                 />
               </div>
@@ -150,15 +161,24 @@ export default function Register() {
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Mobile Number
                 </label>
-                <input
-                  type="tel"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                  required
-                  placeholder="+63 917 123 4567"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
-                />
+                <div className="flex items-center">
+                  <span className="px-3 py-2.5 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-sm font-bold text-slate-700 select-none">
+                    +63
+                  </span>
+                  <input
+                    type="tel"
+                    value={rawMobileNumber}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.startsWith('0')) val = val.substring(1);
+                      if (val.startsWith('63')) val = val.substring(2);
+                      if (val.length <= 10) setRawMobileNumber(val);
+                    }}
+                    required
+                    placeholder="9171234567"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-r-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 font-bold"
+                  />
+                </div>
               </div>
             </div>
 
@@ -172,7 +192,7 @@ export default function Register() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="name@example.com"
+                placeholder="Email address"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
               />
             </div>
@@ -188,7 +208,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  placeholder="Min. 6 characters"
+                  placeholder="Password"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 pr-10"
                 />
                 <button
@@ -210,7 +230,7 @@ export default function Register() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  placeholder="Re-enter password"
+                  placeholder="Confirm password"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
                 />
               </div>

@@ -36,6 +36,51 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [msgLoading, setMsgLoading] = useState(false);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+
+  const handleAdminTakedown = async () => {
+    const reason = prompt(
+      `Enter admin reason/note for taking down "${listing.title}":`,
+      'Violated marketplace scam prevention policies.'
+    );
+    if (reason === null) return; // User cancelled
+
+    setAdminActionLoading(true);
+    try {
+      const res = await api.put(`/admin/listings/${listing._id}/moderate`, {
+        status: 'removed',
+        removalReason: reason || 'Administrative policy takedown'
+      });
+      if (res.success) {
+        alert('Listing has been taken down and violation notice sent to the seller.');
+        setListing((prev) => ({ ...prev, status: 'removed', removalReason: reason }));
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to take down listing.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const handleAdminDismiss = async () => {
+    if (!confirm(`Dismiss reports and approve listing "${listing.title}"?`)) return;
+
+    setAdminActionLoading(true);
+    try {
+      const res = await api.put(`/admin/listings/${listing._id}/moderate`, {
+        status: 'active',
+        removalReason: ''
+      });
+      if (res.success) {
+        alert('Listing reports dismissed and status approved as Active.');
+        setListing((prev) => ({ ...prev, status: 'active', removalReason: '' }));
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to approve listing.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -63,23 +108,26 @@ export default function ProductDetail() {
       return;
     }
 
-    if (listing.sellerId._id === user._id) {
-      alert('You are the seller of this listing.');
+    const sellerObjId = seller._id || seller;
+    if (user && sellerObjId && sellerObjId.toString() === user._id.toString()) {
+      alert(`⚠️ You are currently logged in as @${user.username} (the seller of this listing).\n\nTo test buying your own item, please open an Incognito Window (Ctrl+Shift+N) or a second browser and log in as a buyer!`);
       return;
     }
 
     setMsgLoading(true);
-    const defaultMsg = `Hi ${listing.sellerId.firstName}! I am interested in buying "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`;
+    const defaultMsg = `Hi ${seller.firstName || 'Seller'}! 🙋‍♂️ I am interested in buying your "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`;
     
     try {
       const res = await api.post('/messages/start', {
-        receiverId: listing.sellerId._id,
+        receiverId: sellerObjId,
         listingId: listing._id,
         initialMessage: typeof customMessage === 'string' && customMessage.trim() ? customMessage : defaultMsg
       });
 
       if (res.success && res.conversation) {
         navigate(`/messages?conversationId=${res.conversation._id}`);
+      } else {
+        alert('Could not start conversation. Please try again.');
       }
     } catch (err) {
       alert(err.message || 'Failed to start message.');
@@ -134,11 +182,11 @@ export default function ProductDetail() {
       {/* Back button */}
       <div>
         <Link
-          to="/products"
+          to={isAdmin ? "/admin" : "/products"}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-safegreen-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to marketplace catalog</span>
+          <span>{isAdmin ? "Back to listings" : "Back to marketplace catalog"}</span>
         </Link>
       </div>
 
@@ -325,7 +373,58 @@ export default function ProductDetail() {
 
             {/* Action Buttons */}
             <div className="pt-2 space-y-2.5">
-              {listing.status === 'sold' ? (
+              {isAdmin ? (
+                /* Dedicated Admin Control Panel */
+                <div className="p-5 bg-purple-900/10 border-2 border-purple-500/30 rounded-2xl space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-purple-200/40 pb-2">
+                    <div className="flex items-center gap-2 text-purple-700 font-extrabold text-xs uppercase tracking-wider">
+                      <ShieldAlert className="w-4 h-4 text-purple-600" />
+                      <span>Admin Moderation Controls</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                      listing.status === 'removed' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      Status: {listing.status}
+                    </span>
+                  </div>
+
+                  {listing.removalReason && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900">
+                      <span className="font-bold block">Current Removal Reason Note:</span>
+                      <p className="italic">{listing.removalReason}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      disabled={adminActionLoading || listing.status === 'removed'}
+                      onClick={handleAdminTakedown}
+                      className="py-3 px-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                    >
+                      <ShieldAlert className="w-4 h-4" />
+                      <span>{listing.status === 'removed' ? 'Already Taken Down' : 'Take Down Listing'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={adminActionLoading || listing.status === 'active'}
+                      onClick={handleAdminDismiss}
+                      className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Dismiss & Approve</span>
+                    </button>
+                  </div>
+
+                  <Link
+                    to="/admin"
+                    className="block text-center text-xs font-bold text-purple-700 hover:underline pt-1"
+                  >
+                    Return to Admin Control Center →
+                  </Link>
+                </div>
+              ) : listing.status === 'sold' ? (
                 <div className="p-4 bg-slate-100 border border-slate-300 rounded-2xl text-center space-y-1 shadow-inner">
                   <span className="font-extrabold text-slate-800 text-sm uppercase tracking-wider block">
                     🔴 ITEM SOLD OUT
@@ -376,31 +475,21 @@ export default function ProductDetail() {
                       <span>Report Listing</span>
                     </button>
 
-                    {isAdmin ? (
-                      <Link
-                        to="/admin/listings"
-                        className="py-2.5 px-3 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <ShieldAlert className="w-3.5 h-3.5 text-purple-600" />
-                        <span>Admin Console</span>
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (navigator.share) {
-                            navigator.share({ title: listing.title, url: window.location.href });
-                          } else {
-                            navigator.clipboard.writeText(window.location.href);
-                            alert('Listing URL copied to clipboard!');
-                          }
-                        }}
-                        className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <Share2 className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Share Listing</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({ title: listing.title, url: window.location.href });
+                        } else {
+                          navigator.clipboard.writeText(window.location.href);
+                          alert('Listing URL copied to clipboard!');
+                        }
+                      }}
+                      className="py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Share Listing</span>
+                    </button>
                   </div>
                 </>
               ) : (

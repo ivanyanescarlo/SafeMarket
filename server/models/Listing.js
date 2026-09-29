@@ -107,6 +107,10 @@ const listingSchema = new mongoose.Schema(
       enum: ['active', 'sold', 'inactive', 'removed'],
       default: 'active'
     },
+    soldAt: {
+      type: Date,
+      default: null
+    },
     removalReason: {
       type: String,
       default: ''

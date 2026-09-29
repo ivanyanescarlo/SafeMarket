@@ -40,6 +40,21 @@ const CONDITIONS = [
   'Heavily Used'
 ];
 
+const ITEM_AGE_OPTIONS = [
+  '-- Select Item Age (Optional) --',
+  'Brand New / Unused',
+  'Less than 1 Month (Few Days)',
+  '1 to 3 Months',
+  '4 to 6 Months',
+  '7 to 11 Months',
+  '1 Year',
+  '1.5 Years (1 Year 6 Months)',
+  '2 Years',
+  '2.5 Years (2 Years 6 Months)',
+  '3+ Years',
+  '5+ Years'
+];
+
 export default function CreateListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -54,8 +69,8 @@ export default function CreateListing() {
     model: '',
     itemAge: '',
     additionalDetails: '',
-    province: user?.location?.province || 'Metro Manila (NCR)',
-    cityMunicipality: user?.location?.cityMunicipality || 'Quezon City',
+    province: '',
+    cityMunicipality: '',
     images: []
   });
 
@@ -64,8 +79,26 @@ export default function CreateListing() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Restrict price input to digits 0-9 ONLY (blocks '-', '+', 'e', 'E', '.', etc.)
+  const handleDigitsOnlyKeyDown = (e) => {
+    if (
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'price') {
+      const sanitized = value.replace(/[^0-9]/g, '');
+      setFormData((prev) => ({ ...prev, price: sanitized }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -110,6 +143,21 @@ export default function CreateListing() {
       return;
     }
 
+    if (Number(formData.price) > 999999) {
+      setError('Maximum price limit is ₱999,999.');
+      return;
+    }
+
+    if (!formData.province || !formData.cityMunicipality) {
+      setError('Please select both your Province and City / Municipality for meetup trading location.');
+      return;
+    }
+
+    if (!aiAnalysis) {
+      setError('Please run the Gemini AI Listing Risk Analyzer before publishing.');
+      return;
+    }
+
     const cleanImages = formData.images.filter((img) => img.trim() !== '');
     if (cleanImages.length === 0) {
       // provide default high quality placeholder
@@ -136,7 +184,7 @@ export default function CreateListing() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
       {/* Header */}
       <div>
@@ -187,12 +235,13 @@ export default function CreateListing() {
                 Price (₱ PHP)
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="price"
                 value={formData.price}
+                onKeyDown={handleDigitsOnlyKeyDown}
                 onChange={handleChange}
                 required
-                min={0}
                 placeholder="e.g. 8500"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500 font-bold text-slate-800"
               />
@@ -236,10 +285,10 @@ export default function CreateListing() {
           </div>
         </div>
 
-        {/* Optional Specifications */}
+        {/* Specifications & History */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
           <h2 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">
-            2. Specifications & History (Optional)
+            2. Specifications & History
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -275,14 +324,24 @@ export default function CreateListing() {
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Item Age / Ownership Duration
               </label>
-              <input
-                type="text"
+              <select
                 name="itemAge"
                 value={formData.itemAge}
-                onChange={handleChange}
-                placeholder="e.g. 8 months"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm"
-              />
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    itemAge: val.startsWith('--') ? '' : val
+                  }));
+                }}
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-2xs"
+              >
+                {ITEM_AGE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

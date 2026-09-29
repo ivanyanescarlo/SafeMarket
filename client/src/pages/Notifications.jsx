@@ -44,7 +44,7 @@ export default function Notifications() {
   const violationCount = notifications.filter(n => n.type === 'violation').length;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
         
         {/* Header */}
@@ -166,9 +166,27 @@ export default function Notifications() {
                         })}
                       </span>
                     </div>
-                    <p className={`text-xs mt-1 leading-relaxed ${isViolation ? 'text-rose-800' : 'text-slate-600'}`}>
+                    <p className={`text-xs mt-1 leading-relaxed ${isViolation ? 'text-rose-900 font-medium' : 'text-slate-600'}`}>
                       {notif.message}
                     </p>
+
+                    {isViolation && (
+                      <div className="mt-3 p-3 bg-white border border-rose-200 rounded-xl text-xs space-y-1 shadow-2xs">
+                        <span className="font-extrabold text-[10px] text-rose-700 uppercase tracking-wider block">
+                          📋 Official Admin Moderation & Violation Note:
+                        </span>
+                        <p className="text-rose-950 font-bold italic">
+                          "{notif.message}"
+                        </p>
+                        {notif.link && (
+                          <div className="pt-1">
+                            <span className="text-[11px] font-bold text-safegreen-700 hover:underline inline-flex items-center gap-1">
+                              View Affected Item Status →
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {!notif.read && (

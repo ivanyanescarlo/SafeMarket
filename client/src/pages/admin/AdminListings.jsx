@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Eye, Trash2, CheckCircle, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Trash2, CheckCircle, ShieldAlert, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
 
 export default function AdminListings({ onAction }) {
+  const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -75,9 +76,6 @@ export default function AdminListings({ onAction }) {
           <h2 className="text-lg font-bold text-slate-900">
             Marketplace Listings Moderation
           </h2>
-          <p className="text-xs text-slate-500">
-            Inspect product details, Gemini risk flags, and remove prohibited items
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
@@ -129,14 +127,19 @@ export default function AdminListings({ onAction }) {
                 <th className="py-3 px-4">Item</th>
                 <th className="py-3 px-4">Seller</th>
                 <th className="py-3 px-4">Price</th>
-                <th className="py-3 px-4">Gemini AI Risk</th>
+                <th className="py-3 px-4">AI Risk</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Moderation Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {listings.map((item) => (
-                <tr key={item._id} className="hover:bg-slate-50/70 transition-colors">
+                <tr
+                  key={item._id}
+                  onDoubleClick={() => navigate(`/product/${item._id}`)}
+                  title="Double click to view product details"
+                  className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                >
                   <td className="py-3 px-4 flex items-center gap-3">
                     <img
                       src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
@@ -144,13 +147,9 @@ export default function AdminListings({ onAction }) {
                       className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                     />
                     <div className="min-w-0 max-w-xs">
-                      <Link
-                        to={`/product/${item._id}`}
-                        target="_blank"
-                        className="font-bold text-slate-900 hover:text-safegreen-700 truncate block text-xs"
-                      >
+                      <span className="font-bold text-slate-900 hover:text-safegreen-700 truncate block text-xs">
                         {item.title}
-                      </Link>
+                      </span>
                       <span className="text-[10px] text-slate-400 truncate block">
                         {item.category} • {item.location?.cityMunicipality}
                       </span>
@@ -190,20 +189,14 @@ export default function AdminListings({ onAction }) {
                   </td>
 
                   <td className="py-3 px-4 text-right space-x-2">
-                    <Link
-                      to={`/product/${item._id}`}
-                      target="_blank"
-                      className="p-1.5 inline-block text-slate-500 hover:text-slate-800"
-                      title="Inspect Product"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Link>
-
                     {item.status !== 'removed' ? (
                       <button
                         type="button"
                         disabled={actionLoading === item._id}
-                        onClick={() => handleModerate(item, 'removed')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleModerate(item, 'removed');
+                        }}
                         className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold border border-rose-200"
                       >
                         Take Down
@@ -212,7 +205,10 @@ export default function AdminListings({ onAction }) {
                       <button
                         type="button"
                         disabled={actionLoading === item._id}
-                        onClick={() => handleModerate(item, 'active')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleModerate(item, 'active');
+                        }}
                         className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200"
                       >
                         Restore

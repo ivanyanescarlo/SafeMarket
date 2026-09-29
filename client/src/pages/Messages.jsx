@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   MessageSquare,
   Send,
@@ -9,7 +9,9 @@ import {
   Clock,
   CheckCheck,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +19,7 @@ import { useNotifications } from '../context/NotificationContext';
 import RatingModal from '../components/common/RatingModal';
 
 export default function Messages() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { refreshUnreadMessages } = useNotifications();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -59,7 +61,7 @@ export default function Messages() {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 10000); // 10s poll
+    const interval = setInterval(fetchConversations, 3000); // 3s fast poll
     return () => clearInterval(interval);
   }, []);
 
@@ -69,7 +71,18 @@ export default function Messages() {
     try {
       const data = await api.get(`/messages/${convId}`);
       if (data.success) {
-        setMessages(data.messages || []);
+        const fetchedMsgs = data.messages || [];
+        setMessages((prev) => {
+          // If message count and last message ID are unchanged, preserve state reference to prevent auto-scrolling
+          if (
+            prev.length === fetchedMsgs.length &&
+            prev.length > 0 &&
+            prev[prev.length - 1]._id === fetchedMsgs[fetchedMsgs.length - 1]._id
+          ) {
+            return prev;
+          }
+          return fetchedMsgs;
+        });
         refreshUnreadMessages();
       }
     } catch (err) {
@@ -85,7 +98,7 @@ export default function Messages() {
     // Polling for live chat updates
     const interval = setInterval(() => {
       fetchActiveMessages(activeConvId);
-    }, 4000);
+    }, 2000); // 2s fast poll
     return () => clearInterval(interval);
   }, [activeConvId]);
 
@@ -122,7 +135,14 @@ export default function Messages() {
   );
 
   const listing = activeConversation?.listingId;
-  const isSeller = user && listing && (listing.sellerId?._id === user._id || listing.sellerId === user._id);
+  const isSeller = Boolean(
+    user && (
+      (listing?.sellerId?._id && listing.sellerId._id.toString() === user._id?.toString()) ||
+      (listing?.sellerId && listing.sellerId.toString() === user._id?.toString()) ||
+      (user.role === 'seller' && otherParticipant?.role === 'buyer') ||
+      (user.sellerProfile?.isSeller && !otherParticipant?.sellerProfile?.isSeller)
+    )
+  );
   const isSold = listing?.status === 'sold';
 
   // Seller Action: Mark as Sold & Request Buyer Rating
@@ -151,12 +171,29 @@ export default function Messages() {
     }
   };
 
+  if (isAdmin) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-4">
+        <div className="w-16 h-16 rounded-3xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto border border-purple-200 shadow-sm">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900">Admin Chat Restricted</h2>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">
+          Administrators do not engage in private buyer-seller marketplace chat. Use official Administrative Moderation Notes to issue listing notices, takedown reasons, or policy warnings.
+        </p>
+        <Link to="/admin" className="inline-block px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold shadow-md">
+          Return to Admin Control Center
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden h-[75vh] flex flex-col md:flex-row">
         
-        {/* Left: Conversation List (1/3) */}
-        <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col h-full bg-slate-50/50">
+        {/* Left: Conversation List */}
+        <div className="w-full md:w-96 lg:w-[420px] border-b md:border-b-0 md:border-r border-slate-200 flex flex-col h-full bg-slate-50/50">
           <div className="p-4 border-b border-slate-200 bg-white">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-safegreen-600" />
@@ -270,15 +307,22 @@ export default function Messages() {
                 {/* Right side actions in header */}
                 <div className="flex items-center gap-2">
                   {listing && (
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                      <Package className="w-4 h-4 text-safegreen-600 flex-shrink-0" />
-                      <span className="font-semibold text-slate-800 max-w-[150px] sm:max-w-[200px] truncate">
+                    <Link
+                      to={`/product/${listing._id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Click to view full product details"
+                      className="flex items-center gap-2 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-safegreen-300 text-xs transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <Package className="w-4 h-4 text-safegreen-600 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                      <span className="font-semibold text-slate-800 group-hover:text-safegreen-700 max-w-[150px] sm:max-w-[200px] truncate">
                         {listing.title}
                       </span>
                       <span className="font-bold text-safegreen-800">
                         ₱{listing.price?.toLocaleString()}
                       </span>
-                    </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-safegreen-600 transition-colors" />
+                    </Link>
                   )}
 
                   {/* Seller Action Button: Mark as Sold & Request Rating */}

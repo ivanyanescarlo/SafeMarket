@@ -36,6 +36,21 @@ const CONDITIONS = [
   'Heavily Used'
 ];
 
+const ITEM_AGE_OPTIONS = [
+  '-- Select Item Age (Optional) --',
+  'Brand New / Unused',
+  'Less than 1 Month (Few Days)',
+  '1 to 3 Months',
+  '4 to 6 Months',
+  '7 to 11 Months',
+  '1 Year',
+  '1.5 Years (1 Year 6 Months)',
+  '2 Years',
+  '2.5 Years (2 Years 6 Months)',
+  '3+ Years',
+  '5+ Years'
+];
+
 export default function EditListing() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -101,8 +116,25 @@ export default function EditListing() {
     fetchListing();
   }, [id]);
 
+  const handleDigitsOnlyKeyDown = (e) => {
+    if (
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'price') {
+      const sanitized = value.replace(/[^0-9]/g, '');
+      setFormData((prev) => ({ ...prev, price: sanitized }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -143,6 +175,12 @@ export default function EditListing() {
     setSaving(true);
     setError('');
 
+    if (Number(formData.price) > 999999) {
+      setError('Maximum price limit is ₱999,999.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const cleanImages = formData.images.filter((img) => img && img.trim() !== '');
 
@@ -172,7 +210,7 @@ export default function EditListing() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div>
         <Link
           to="/seller/listings"
@@ -225,12 +263,13 @@ export default function EditListing() {
                 Price (₱ PHP) <span className="text-rose-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="price"
                 value={formData.price}
+                onKeyDown={handleDigitsOnlyKeyDown}
                 onChange={handleChange}
                 required
-                min="0"
                 placeholder="₱ 25,000"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
               />
@@ -270,14 +309,16 @@ export default function EditListing() {
             />
           </div>
 
-          {/* Optional Specs */}
+          {/* Item Specs */}
           <div className="pt-2 border-t border-slate-100">
             <span className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-              Optional Item Specifications
+              Item Specifications & History
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Brand</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Brand
+                </label>
                 <input
                   type="text"
                   name="brand"
@@ -289,7 +330,9 @@ export default function EditListing() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Model / Specs</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Model / Specs
+                </label>
                 <input
                   type="text"
                   name="model"
@@ -301,15 +344,28 @@ export default function EditListing() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Age of Item</label>
-                <input
-                  type="text"
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Item Age / Ownership Duration
+                </label>
+                
+                <select
                   name="itemAge"
                   value={formData.itemAge}
-                  onChange={handleChange}
-                  placeholder="e.g. 6 months used"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs"
-                />
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      itemAge: val.startsWith('--') ? '' : val
+                    }));
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                >
+                  {ITEM_AGE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

@@ -1,7 +1,11 @@
 import React from 'react';
 import { ShieldCheck, AlertCircle, Heart } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Footer() {
+  const { isAdmin } = useAuth();
+  if (isAdmin) return null;
+
   return (
     <footer className="bg-slate-900 text-slate-300 mt-20 border-t border-slate-800">
       {/* Scam Prevention Notice Banner */}

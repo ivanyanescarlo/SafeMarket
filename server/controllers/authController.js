@@ -68,10 +68,10 @@ exports.register = async (req, res) => {
     }
 
     const existingUsername = await User.findOne({ username: cleanUsername });
-    if (existingUsername && existingUsername.isVerified && existingUsername._id.toString() !== existingEmail?._id.toString()) {
+    if (existingUsername && existingUsername._id.toString() !== existingEmail?._id.toString()) {
       return res.status(400).json({
         success: false,
-        message: 'This username is already taken by a verified user. Please choose another.'
+        message: 'This username is already taken. Please choose another username.'
       });
     }
 
@@ -138,6 +138,25 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
+
+    // Handle MongoDB duplicate key error (code 11000) with 400 Bad Request
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || error.keyValue || {})[0] || 'username or email';
+      return res.status(400).json({
+        success: false,
+        message: `An account with this ${field} already exists. Please choose a different ${field}.`
+      });
+    }
+
+    // Handle Mongoose validation errors with 400 Bad Request
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join('. ')
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: error.message || 'Server error during registration.'

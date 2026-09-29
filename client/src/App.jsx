@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { CartProvider } from './context/CartContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Layout
 import Header from './components/layout/Header';
@@ -35,9 +36,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <NotificationProvider>
-          <CartProvider>
-            <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+        <ThemeProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
               <Header />
 
               <main className="flex-1">
@@ -151,7 +153,8 @@ export default function App() {
           </div>
         </CartProvider>
       </NotificationProvider>
-    </AuthProvider>
-    </BrowserRouter>
+    </ThemeProvider>
+  </AuthProvider>
+</BrowserRouter>
   );
 }

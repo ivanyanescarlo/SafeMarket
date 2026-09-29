@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, X, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RatingModal({
   isOpen,
@@ -10,7 +11,8 @@ export default function RatingModal({
   listingId,
   onRatingSuccess
 }) {
-  const [rating, setRating] = useState(5);
+  const { user } = useAuth();
+  const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,8 +23,19 @@ export default function RatingModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    if (sellerId && user && (sellerId.toString() === user._id?.toString() || sellerId.toString() === user.id?.toString())) {
+      setError('You cannot rate yourself.');
+      return;
+    }
+
+    if (!rating || rating < 1) {
+      setError('Please select a rating of at least 1 star.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await api.post('/ratings', {
@@ -107,7 +120,11 @@ export default function RatingModal({
                   ))}
                 </div>
                 <span className="block text-xs font-medium text-slate-500 mt-2">
-                  {rating === 5 ? '5 Stars – Excellent & Trustworthy' : `${rating} Stars`}
+                  {rating === 0
+                    ? 'Click stars above to rate (1–5 Stars)'
+                    : rating === 5
+                    ? '5 Stars – Excellent & Trustworthy'
+                    : `${rating} Star${rating > 1 ? 's' : ''}`}
                 </span>
               </div>
 

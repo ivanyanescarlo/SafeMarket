@@ -15,7 +15,7 @@ exports.getConversations = async (req, res) => {
       participants: { $in: [userId] }
     })
       .populate('participants', 'firstName lastName username profileImage role')
-      .populate('listingId', 'title price images location status')
+      .populate('listingId', 'title price images location status sellerId')
       .sort({ updatedAt: -1 });
 
     // Count unread messages for each conversation
@@ -107,11 +107,21 @@ exports.startConversation = async (req, res) => {
         createdAt: msg.createdAt
       };
       await conversation.save();
+
+      // Create notification for receiver
+      await Notification.create({
+        recipientId: receiverId,
+        senderId: senderId,
+        type: 'message',
+        title: `💬 New Inquiry from ${req.user.firstName}`,
+        message: msg.text.length > 60 ? msg.text.slice(0, 60) + '...' : msg.text,
+        link: `/messages?conversationId=${conversation._id}`
+      });
     }
 
     const populated = await Conversation.findById(conversation._id)
       .populate('participants', 'firstName lastName username profileImage role')
-      .populate('listingId', 'title price images location status');
+      .populate('listingId', 'title price images location status sellerId');
 
     res.status(200).json({
       success: true,
@@ -229,6 +239,16 @@ exports.sendMessage = async (req, res) => {
       createdAt: message.createdAt
     };
     await conversation.save();
+
+    // Create notification for receiver
+    await Notification.create({
+      recipientId: receiverId,
+      senderId: senderId,
+      type: 'message',
+      title: `💬 New Message from ${req.user.firstName}`,
+      message: message.text.length > 60 ? message.text.slice(0, 60) + '...' : message.text,
+      link: `/messages?conversationId=${conversation._id}`
+    });
 
     const populated = await Message.findById(message._id).populate(
       'sender',
