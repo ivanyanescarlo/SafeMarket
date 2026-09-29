@@ -14,12 +14,18 @@ export default function VerifyOtp() {
   const emailParam = queryParams.get('email') || location.state?.email || '';
 
   const [email, setEmail] = useState(emailParam);
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState(location.state?.otpCode || '');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [timer, setTimer] = useState(60); // 60s cooldown for resend button
+
+  useEffect(() => {
+    if (location.state?.otpCode && !otp) {
+      setOtp(location.state.otpCode);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let interval;

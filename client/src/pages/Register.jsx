@@ -38,7 +38,12 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let cleanValue = value;
+    if (name === 'firstName' || name === 'lastName') {
+      // Disallow numbers and special characters in first/last names (only letters, spaces, hyphens, and apostrophes)
+      cleanValue = value.replace(/[^a-zA-Z\s\'-]/g, '');
+    }
+    setFormData((prev) => ({ ...prev, [name]: cleanValue }));
     if (invalidField === name) {
       setInvalidField('');
     }
@@ -65,13 +70,15 @@ export default function Register() {
     setError('');
     setInvalidField('');
 
-    if (!formData.firstName.trim()) {
-      focusField('firstName', firstNameRef, 'Please enter your First Name.');
+    const nameRegex = /^[a-zA-Z\s\'-]+$/;
+
+    if (!formData.firstName.trim() || !nameRegex.test(formData.firstName.trim())) {
+      focusField('firstName', firstNameRef, 'First Name should only contain letters, spaces, hyphens, or apostrophes.');
       return;
     }
 
-    if (!formData.lastName.trim()) {
-      focusField('lastName', lastNameRef, 'Please enter your Last Name.');
+    if (!formData.lastName.trim() || !nameRegex.test(formData.lastName.trim())) {
+      focusField('lastName', lastNameRef, 'Last Name should only contain letters, spaces, hyphens, or apostrophes.');
       return;
     }
 
@@ -112,8 +119,10 @@ export default function Register() {
     try {
       const data = await register({ ...formData, mobileNumber: fullMobileNumber });
       if (data.success) {
-        // Redirect to OTP verification screen with user email
-        navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`);
+        // Redirect to OTP verification screen with user email and optional otpCode state fallback
+        navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`, {
+          state: { email: data.email, otpCode: data.otpCode }
+        });
       }
     } catch (err) {
       const msg = err.message || 'Registration failed. Please check your information.';
