@@ -202,12 +202,12 @@ exports.verifyOtp = async (req, res) => {
       });
     }
 
-    // Check code (Allow actual OTP code OR universal demo override '123456' / '654321')
+    // Check code strictly against generated user.otpCode
     const cleanOtp = otp.trim();
-    if (user.otpCode !== cleanOtp && cleanOtp !== '123456' && cleanOtp !== '654321') {
+    if (user.otpCode !== cleanOtp) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid verification code. Please check and try again.'
+        message: 'Invalid verification code. Please check your email inbox or spam folder.'
       });
     }
 
