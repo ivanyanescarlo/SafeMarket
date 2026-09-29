@@ -156,7 +156,7 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Section: Account Information */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-safegreen-800 border-b border-slate-100 pb-1">
@@ -174,7 +174,6 @@ export default function Register() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  required
                   placeholder="First name"
                   className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
                     invalidField === 'firstName'
@@ -182,6 +181,9 @@ export default function Register() {
                       : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
                   }`}
                 />
+                {invalidField === 'firstName' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">First Name is required</span>
+                )}
               </div>
 
               <div>
@@ -194,7 +196,6 @@ export default function Register() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  required
                   placeholder="Last name"
                   className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
                     invalidField === 'lastName'
@@ -202,6 +203,9 @@ export default function Register() {
                       : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
                   }`}
                 />
+                {invalidField === 'lastName' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Last Name is required</span>
+                )}
               </div>
             </div>
 
@@ -216,7 +220,6 @@ export default function Register() {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  required
                   placeholder="Username"
                   className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
                     invalidField === 'username'
@@ -224,6 +227,9 @@ export default function Register() {
                       : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
                   }`}
                 />
+                {invalidField === 'username' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Username is required or already taken</span>
+                )}
               </div>
 
               <div>
@@ -245,7 +251,6 @@ export default function Register() {
                       if (val.length <= 10) setRawMobileNumber(val);
                       if (invalidField === 'mobile') setInvalidField('');
                     }}
-                    required
                     placeholder="9171234567"
                     className={`w-full px-3.5 py-2.5 bg-white border rounded-r-lg text-sm text-slate-800 focus:outline-none focus:ring-2 font-bold transition-all ${
                       invalidField === 'mobile'
@@ -254,6 +259,9 @@ export default function Register() {
                     }`}
                   />
                 </div>
+                {invalidField === 'mobile' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Valid 10-digit mobile number required</span>
+                )}
               </div>
             </div>
 
@@ -267,7 +275,6 @@ export default function Register() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                required
                 placeholder="Email address"
                 className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
                   invalidField === 'email'
@@ -275,6 +282,9 @@ export default function Register() {
                     : 'border-slate-300 focus:ring-safegreen-500 focus:border-safegreen-500'
                 }`}
               />
+              {invalidField === 'email' && (
+                <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Email address is required or already registered</span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -288,7 +298,6 @@ export default function Register() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
                   placeholder="At least 8 characters"
                   className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 pr-10 transition-all ${
                     invalidField === 'password'
@@ -303,6 +312,9 @@ export default function Register() {
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+                {invalidField === 'password' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Password must be at least 8 characters</span>
+                )}
               </div>
 
               <div className="relative">
@@ -315,7 +327,6 @@ export default function Register() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  required
                   placeholder="Confirm password"
                   className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 pr-10 transition-all ${
                     invalidField === 'confirmPassword'
@@ -330,6 +341,9 @@ export default function Register() {
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+                {invalidField === 'confirmPassword' && (
+                  <span className="text-[11px] font-semibold text-rose-600 mt-1 block">Passwords do not match</span>
+                )}
               </div>
             </div>
           </div>
