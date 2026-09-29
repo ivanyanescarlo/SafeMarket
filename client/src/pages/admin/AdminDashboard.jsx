@@ -97,16 +97,21 @@ export default function AdminDashboard() {
     { id: 'logs', label: 'Activity Logs', icon: ShieldAlert }
   ];
 
-  // Dummy activity trend for left chart
-  const trendData = useMemo(() => [
-    { day: 'Mon', listings: 12, users: 4 },
-    { day: 'Tue', listings: 19, users: 7 },
-    { day: 'Wed', listings: 15, users: 5 },
-    { day: 'Thu', listings: 25, users: 9 },
-    { day: 'Fri', listings: 22, users: 11 },
-    { day: 'Sat', listings: 30, users: 14 },
-    { day: 'Sun', listings: 28, users: 10 }
-  ], []);
+  // Dynamic activity trend from database stats
+  const trendData = useMemo(() => {
+    if (stats?.weeklyTrend && Array.isArray(stats.weeklyTrend)) {
+      return stats.weeklyTrend;
+    }
+    return [
+      { day: 'Mon', listings: 0, users: 0 },
+      { day: 'Tue', listings: 0, users: 0 },
+      { day: 'Wed', listings: 0, users: 0 },
+      { day: 'Thu', listings: 0, users: 0 },
+      { day: 'Fri', listings: 0, users: 0 },
+      { day: 'Sat', listings: 0, users: 0 },
+      { day: 'Sun', listings: 0, users: 0 }
+    ];
+  }, [stats?.weeklyTrend]);
 
   const defaultPieData = categoryData.length > 0 ? categoryData : [
     { name: 'Phones & Gadgets', value: 35 },

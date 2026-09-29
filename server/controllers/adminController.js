@@ -26,6 +26,41 @@ exports.getStats = async (req, res) => {
 
     const recentLogs = await ActivityLog.find().sort({ createdAt: -1 }).limit(10);
 
+    // Compute dynamic weekly activity trend from database
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const allListings = await Listing.find({}, 'createdAt');
+    const allUsers = await User.find({}, 'createdAt');
+
+    const dayCounts = {
+      Mon: { day: 'Mon', listings: 0, users: 0 },
+      Tue: { day: 'Tue', listings: 0, users: 0 },
+      Wed: { day: 'Wed', listings: 0, users: 0 },
+      Thu: { day: 'Thu', listings: 0, users: 0 },
+      Fri: { day: 'Fri', listings: 0, users: 0 },
+      Sat: { day: 'Sat', listings: 0, users: 0 },
+      Sun: { day: 'Sun', listings: 0, users: 0 }
+    };
+
+    allListings.forEach((item) => {
+      const dayName = daysOfWeek[new Date(item.createdAt).getDay()];
+      if (dayCounts[dayName]) dayCounts[dayName].listings += 1;
+    });
+
+    allUsers.forEach((usr) => {
+      const dayName = daysOfWeek[new Date(usr.createdAt).getDay()];
+      if (dayCounts[dayName]) dayCounts[dayName].users += 1;
+    });
+
+    const weeklyTrend = [
+      dayCounts.Mon,
+      dayCounts.Tue,
+      dayCounts.Wed,
+      dayCounts.Thu,
+      dayCounts.Fri,
+      dayCounts.Sat,
+      dayCounts.Sun
+    ];
+
     res.status(200).json({
       success: true,
       stats: {
@@ -44,7 +79,8 @@ exports.getStats = async (req, res) => {
         reports: {
           total: totalReports,
           pending: pendingReports
-        }
+        },
+        weeklyTrend
       },
       recentLogs
     });
