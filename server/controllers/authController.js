@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { logActivity } = require('../utils/logger');
 const { sendOtpEmail } = require('../utils/emailService');
+const { sendSmsOtp } = require('../utils/smsService');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -115,8 +116,9 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Send OTP via Email (or terminal console fallback)
+    // Send OTP via Email and SMS
     await sendOtpEmail(user.email, otp, user.firstName);
+    await sendSmsOtp(user.mobileNumber, otp, user.firstName);
 
     await logActivity({
       userId: user._id,
@@ -130,7 +132,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Account registered! Your 6-digit OTP code has been dispatched to your email.',
+      message: `Account registered! Your 6-digit OTP code has been dispatched to your email and mobile number (${user.mobileNumber}).`,
       userId: user._id,
       email: user.email,
       mobileNumber: user.mobileNumber
@@ -290,8 +292,9 @@ exports.resendOtp = async (req, res) => {
     user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     await user.save();
 
-    // Send OTP via Email (or terminal console fallback)
+    // Send OTP via Email and SMS
     await sendOtpEmail(user.email, newOtp, user.firstName);
+    await sendSmsOtp(user.mobileNumber, newOtp, user.firstName);
 
     await logActivity({
       userId: user._id,
@@ -305,7 +308,7 @@ exports.resendOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'A new 6-digit verification code has been dispatched to your email.'
+      message: 'A new 6-digit verification code has been dispatched to your email and mobile phone.'
     });
   } catch (error) {
     console.error('Resend OTP error:', error);
@@ -386,12 +389,13 @@ exports.login = async (req, res) => {
       await user.save();
 
       await sendOtpEmail(user.email, newOtp, user.firstName);
+      await sendSmsOtp(user.mobileNumber, newOtp, user.firstName);
 
       return res.status(403).json({
         success: false,
         requiresVerification: true,
         email: user.email,
-        message: 'Your account is pending OTP verification. A verification code has been dispatched to your email.'
+        message: 'Your account is pending OTP verification. A verification code has been dispatched to your email and mobile phone.'
       });
     }
 

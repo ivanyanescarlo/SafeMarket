@@ -90,7 +90,7 @@ export default function VerifyOtp() {
           Verify Your Account
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 mt-2">
-          We sent a 6-digit One-Time Password (OTP) to your email address:
+          We sent a 6-digit One-Time Password (OTP) to your registered email & mobile phone:
         </p>
         <p className="text-sm font-bold text-slate-800 mt-0.5 truncate">
           {email || 'your registered contact'}
