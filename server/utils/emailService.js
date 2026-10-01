@@ -1,20 +1,18 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 /**
- * Send OTP Verification Email
+ * Send OTP Verification Email using Resend (with SMTP and terminal fallback)
  * @param {string} toEmail - Recipient email address
  * @param {string} otpCode - 6-digit OTP code
  * @param {string} firstName - User's first name
  */
 const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
-  const user = process.env.EMAIL_USER || 'ivro.yanes.up@phinmaed.com';
-  const pass = process.env.EMAIL_PASS || 'qrsfojwkonhpgehi';
-  const service = process.env.EMAIL_SERVICE || 'gmail';
-  const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.EMAIL_PORT || '587', 10);
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'SafeMarket <onboarding@resend.dev>';
 
-  // Print OTP to terminal console as fallback/audit log
+  // Print OTP to terminal console as audit/fallback log
   console.log(`\n======================================================`);
   console.log(`[SafeMarket OTP Service]`);
   console.log(`Recipient: ${toEmail}`);
@@ -22,14 +20,76 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
   console.log(`Expires: 10 minutes`);
   console.log(`======================================================\n`);
 
-  // If email credentials are missing in .env, log warning and return
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #059669;">
+        <h1 style="color: #059669; margin: 0; font-size: 24px;">🛡️ SafeMarket</h1>
+        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Secure Local Online Marketplace</p>
+      </div>
+
+      <div style="padding: 24px 0;">
+        <p style="color: #334155; font-size: 15px; margin-bottom: 16px;">Hello <strong>${firstName}</strong>,</p>
+        <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+          Thank you for registering with SafeMarket. Please use the following 6-digit One-Time Password (OTP) to complete your account verification:
+        </p>
+
+        <div style="text-align: center; margin: 28px 0;">
+          <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #047857; background-color: #ecfdf5; padding: 14px 28px; border-radius: 12px; border: 1px solid #a7f3d0;">
+            ${otpCode}
+          </span>
+        </div>
+
+        <p style="color: #64748b; font-size: 13px; text-align: center;">
+          This code will expire in <strong>10 minutes</strong>. Do not share this code with anyone.
+        </p>
+      </div>
+
+      <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #059669;">
+        <p style="color: #334155; font-size: 12px; margin: 0; line-height: 1.4;">
+          <strong>🛡️ Scam Prevention Tip:</strong> SafeMarket staff will NEVER ask for your OTP code, passwords, or upfront reservation payments.
+        </p>
+      </div>
+
+      <div style="margin-top: 24px; text-align: center; color: #94a3b8; font-size: 11px;">
+        &copy; 2026 SafeMarket Philippines. All rights reserved.
+      </div>
+    </div>
+  `;
+
+  // 1. Try Resend API first if RESEND_API_KEY is configured
+  if (resendApiKey && resendApiKey.startsWith('re_')) {
+    try {
+      const resend = new Resend(resendApiKey);
+      const { data, error } = await resend.emails.send({
+        from: resendFromEmail,
+        to: [toEmail],
+        subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
+        html: htmlContent
+      });
+
+      if (error) {
+        console.error(`[Email Service - Resend Error] Failed to send email:`, error.message || error);
+        console.log(`[Email Service] Falling back to Nodemailer SMTP / Terminal log...`);
+      } else {
+        console.log(`[Email Service - Resend] OTP email sent successfully to ${toEmail}. Message ID: ${data?.id}`);
+        return { success: true, delivered: true, messageId: data?.id, provider: 'resend' };
+      }
+    } catch (resendErr) {
+      console.error(`[Email Service - Resend Exception] Exception sending email:`, resendErr.message);
+      console.log(`[Email Service] Falling back to Nodemailer SMTP / Terminal log...`);
+    }
+  }
+
+  // 2. Fallback to Nodemailer SMTP (Gmail / Custom SMTP)
+  const user = process.env.EMAIL_USER || 'ivro.yanes.up@phinmaed.com';
+  const pass = process.env.EMAIL_PASS || 'qrsfojwkonhpgehi';
+
   if (!user || !pass) {
     console.log(`[Email Service] EMAIL_USER / EMAIL_PASS not set in .env. OTP printed to terminal console only.`);
     return { success: true, delivered: false, mode: 'terminal' };
   }
 
   try {
-    // Primary transporter using built-in Gmail service (SSL port 465)
     let transporter = nodemailer.createTransport({
       service: process.env.EMAIL_SERVICE || 'gmail',
       auth: { user, pass },
@@ -43,41 +103,7 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
       from: process.env.EMAIL_FROM || `"SafeMarket Philippines" <${user}>`,
       to: toEmail,
       subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-          <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #059669;">
-            <h1 style="color: #059669; margin: 0; font-size: 24px;">🛡️ SafeMarket</h1>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Secure Local Online Marketplace</p>
-          </div>
-
-          <div style="padding: 24px 0;">
-            <p style="color: #334155; font-size: 15px; margin-bottom: 16px;">Hello <strong>${firstName}</strong>,</p>
-            <p style="color: #475569; font-size: 14px; line-height: 1.5;">
-              Thank you for registering with SafeMarket. Please use the following 6-digit One-Time Password (OTP) to complete your account verification:
-            </p>
-
-            <div style="text-align: center; margin: 28px 0;">
-              <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #047857; background-color: #ecfdf5; padding: 14px 28px; border-radius: 12px; border: 1px solid #a7f3d0;">
-                ${otpCode}
-              </span>
-            </div>
-
-            <p style="color: #64748b; font-size: 13px; text-align: center;">
-              This code will expire in <strong>10 minutes</strong>. Do not share this code with anyone.
-            </p>
-          </div>
-
-          <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #059669;">
-            <p style="color: #334155; font-size: 12px; margin: 0; line-height: 1.4;">
-              <strong>🛡️ Scam Prevention Tip:</strong> SafeMarket staff will NEVER ask for your OTP code, passwords, or upfront reservation payments.
-            </p>
-          </div>
-
-          <div style="margin-top: 24px; text-align: center; color: #94a3b8; font-size: 11px;">
-            &copy; 2026 SafeMarket Philippines. All rights reserved.
-          </div>
-        </div>
-      `
+      html: htmlContent
     };
 
     let info;
@@ -98,11 +124,10 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
       info = await fallbackTransporter.sendMail(mailOptions);
     }
 
-    console.log(`[Email Service] Real OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
-    return { success: true, delivered: true, messageId: info.messageId };
+    console.log(`[Email Service - SMTP] OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
+    return { success: true, delivered: true, messageId: info.messageId, provider: 'smtp' };
   } catch (err) {
     console.error(`[Email Service Error] Failed to send real email:`, err.message);
-    // Return success: true so user flow isn't blocked, code remains available in terminal/banner
     return { success: true, delivered: false, error: err.message, mode: 'terminal_fallback' };
   }
 };
