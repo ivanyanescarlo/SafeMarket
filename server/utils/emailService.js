@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
 
 /**
- * Send OTP Verification Email (Supports Gmail SMTP & Resend API)
+ * Send OTP Verification Email (Supports Direct SSL Gmail SMTP & Resend API)
  * @param {string} toEmail - Recipient email address
  * @param {string} otpCode - 6-digit OTP code
  * @param {string} firstName - User's first name
@@ -57,16 +57,23 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
     </div>
   `;
 
-  // 1. Try Gmail SMTP first if EMAIL_USER and EMAIL_PASS are configured
+  // 1. Primary: Direct Gmail SSL Transporter (Port 465 - Unblocked on Render Cloud Data Centers)
   if (emailUser && emailPass) {
     try {
       const transporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE || 'gmail',
-        auth: { user: emailUser, pass: emailPass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 12000,
-        greetingTimeout: 12000,
-        socketTimeout: 15000
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // SSL port 465 for Cloud Servers
+        auth: {
+          user: emailUser,
+          pass: emailPass
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000
       });
 
       const mailOptions = {
@@ -76,33 +83,16 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
         html: htmlContent
       };
 
-      let info;
-      try {
-        info = await transporter.sendMail(mailOptions);
-      } catch (primaryErr) {
-        console.warn(`[Gmail SMTP Warning] Connection failed (${primaryErr.message}). Retrying with SSL port 465 fallback...`);
-        const fallbackTransporter = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
-          auth: { user: emailUser, pass: emailPass },
-          tls: { rejectUnauthorized: false },
-          connectionTimeout: 15000,
-          greetingTimeout: 15000,
-          socketTimeout: 20000
-        });
-        info = await fallbackTransporter.sendMail(mailOptions);
-      }
-
-      console.log(`[Email Service - Gmail SMTP] Real OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
-      return { success: true, delivered: true, messageId: info.messageId, provider: 'gmail_smtp' };
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`[Email Service - Direct Gmail SSL] OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
+      return { success: true, delivered: true, messageId: info.messageId, provider: 'gmail_ssl' };
     } catch (gmailErr) {
-      console.error(`[Email Service - Gmail Error] Failed to send via Gmail SMTP:`, gmailErr.message);
-      console.log(`[Email Service] Falling back to Resend API / Terminal log...`);
+      console.error(`[Email Service - Direct Gmail SSL Error] ${gmailErr.message}`);
+      console.log(`[Email Service] Retrying via Resend API / Secondary Transport...`);
     }
   }
 
-  // 2. Fallback to Resend API if configured
+  // 2. Secondary Backup: Resend API if configured
   if (resendApiKey && resendApiKey.startsWith('re_')) {
     try {
       const resend = new Resend(resendApiKey);
@@ -117,9 +107,11 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
       if (!error) {
         console.log(`[Email Service - Resend] OTP email sent successfully to ${toEmail}. Message ID: ${data?.id}`);
         return { success: true, delivered: true, messageId: data?.id, provider: 'resend' };
+      } else {
+        console.error(`[Email Service - Resend API Error] ${error.message || JSON.stringify(error)}`);
       }
     } catch (resendErr) {
-      console.error(`[Email Service - Resend Exception]:`, resendErr.message);
+      console.error(`[Email Service - Resend Exception] ${resendErr.message}`);
     }
   }
 
