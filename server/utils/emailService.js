@@ -3,16 +3,17 @@ const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
 
 /**
- * Send OTP Verification Email using Resend (with SMTP and terminal fallback)
+ * Send OTP Verification Email (Supports Gmail SMTP & Resend API)
  * @param {string} toEmail - Recipient email address
  * @param {string} otpCode - 6-digit OTP code
  * @param {string} firstName - User's first name
  */
 const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
   const resendApiKey = process.env.RESEND_API_KEY;
-  const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'SafeMarket <onboarding@resend.dev>';
 
-  // Print OTP to terminal console as audit/fallback log
+  // Print OTP to terminal console as fallback/audit log
   console.log(`\n======================================================`);
   console.log(`[SafeMarket OTP Service]`);
   console.log(`Recipient: ${toEmail}`);
@@ -56,10 +57,56 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
     </div>
   `;
 
-  // 1. Try Resend API first if RESEND_API_KEY is configured
+  // 1. Try Gmail SMTP first if EMAIL_USER and EMAIL_PASS are configured
+  if (emailUser && emailPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: { user: emailUser, pass: emailPass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 12000,
+        greetingTimeout: 12000,
+        socketTimeout: 15000
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || `"SafeMarket Philippines" <${emailUser}>`,
+        to: toEmail,
+        subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
+        html: htmlContent
+      };
+
+      let info;
+      try {
+        info = await transporter.sendMail(mailOptions);
+      } catch (primaryErr) {
+        console.warn(`[Gmail SMTP Warning] Connection failed (${primaryErr.message}). Retrying with SSL port 465 fallback...`);
+        const fallbackTransporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          auth: { user: emailUser, pass: emailPass },
+          tls: { rejectUnauthorized: false },
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000
+        });
+        info = await fallbackTransporter.sendMail(mailOptions);
+      }
+
+      console.log(`[Email Service - Gmail SMTP] Real OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
+      return { success: true, delivered: true, messageId: info.messageId, provider: 'gmail_smtp' };
+    } catch (gmailErr) {
+      console.error(`[Email Service - Gmail Error] Failed to send via Gmail SMTP:`, gmailErr.message);
+      console.log(`[Email Service] Falling back to Resend API / Terminal log...`);
+    }
+  }
+
+  // 2. Fallback to Resend API if configured
   if (resendApiKey && resendApiKey.startsWith('re_')) {
     try {
       const resend = new Resend(resendApiKey);
+      const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'SafeMarket <onboarding@resend.dev>';
       const { data, error } = await resend.emails.send({
         from: resendFromEmail,
         to: [toEmail],
@@ -67,69 +114,16 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
         html: htmlContent
       });
 
-      if (error) {
-        console.error(`[Email Service - Resend Error] Failed to send email:`, error.message || error);
-        console.log(`[Email Service] Falling back to Nodemailer SMTP / Terminal log...`);
-      } else {
+      if (!error) {
         console.log(`[Email Service - Resend] OTP email sent successfully to ${toEmail}. Message ID: ${data?.id}`);
         return { success: true, delivered: true, messageId: data?.id, provider: 'resend' };
       }
     } catch (resendErr) {
-      console.error(`[Email Service - Resend Exception] Exception sending email:`, resendErr.message);
-      console.log(`[Email Service] Falling back to Nodemailer SMTP / Terminal log...`);
+      console.error(`[Email Service - Resend Exception]:`, resendErr.message);
     }
   }
 
-  // 2. Fallback to Nodemailer SMTP (Gmail / Custom SMTP)
-  const user = process.env.EMAIL_USER || 'ivro.yanes.up@phinmaed.com';
-  const pass = process.env.EMAIL_PASS || 'qrsfojwkonhpgehi';
-
-  if (!user || !pass) {
-    console.log(`[Email Service] EMAIL_USER / EMAIL_PASS not set in .env. OTP printed to terminal console only.`);
-    return { success: true, delivered: false, mode: 'terminal' };
-  }
-
-  try {
-    let transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE || 'gmail',
-      auth: { user, pass },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 12000,
-      greetingTimeout: 12000,
-      socketTimeout: 15000
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || `"SafeMarket Philippines" <${user}>`,
-      to: toEmail,
-      subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
-      html: htmlContent
-    };
-
-    let info;
-    try {
-      info = await transporter.sendMail(mailOptions);
-    } catch (primaryErr) {
-      console.warn(`[Email Service Warning] Primary Gmail service connection failed (${primaryErr.message}). Retrying with direct SSL port 465 fallback...`);
-      const fallbackTransporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        auth: { user, pass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 20000
-      });
-      info = await fallbackTransporter.sendMail(mailOptions);
-    }
-
-    console.log(`[Email Service - SMTP] OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
-    return { success: true, delivered: true, messageId: info.messageId, provider: 'smtp' };
-  } catch (err) {
-    console.error(`[Email Service Error] Failed to send real email:`, err.message);
-    return { success: true, delivered: false, error: err.message, mode: 'terminal_fallback' };
-  }
+  return { success: true, delivered: false, mode: 'terminal_fallback' };
 };
 
 module.exports = { sendOtpEmail };
