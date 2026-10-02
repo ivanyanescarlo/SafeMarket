@@ -3,12 +3,15 @@ const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
 
 /**
- * Send OTP Verification Email (Supports Direct SSL Gmail SMTP & Resend API)
+ * Send OTP Verification Email (Supports Brevo SMTP, Direct Gmail SSL, and Resend API)
  * @param {string} toEmail - Recipient email address
  * @param {string} otpCode - 6-digit OTP code
  * @param {string} firstName - User's first name
  */
 const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
+  const brevoUser = process.env.BREVO_USER || process.env.BREVO_LOGIN;
+  const brevoKey = process.env.BREVO_KEY || process.env.BREVO_API_KEY || process.env.BREVO_PASS;
+
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
   const resendApiKey = process.env.RESEND_API_KEY;
@@ -57,13 +60,48 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
     </div>
   `;
 
-  // 1. Primary: Direct Gmail SSL Transporter (Port 465 - Unblocked on Render Cloud Data Centers)
+  // 1. Primary Priority: Brevo SMTP (Zero Cloud IP Blocks, 300 free emails/day to ANY email address)
+  if (brevoUser && brevoKey) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
+        port: parseInt(process.env.EMAIL_PORT || '587', 10),
+        secure: false,
+        auth: {
+          user: brevoUser,
+          pass: brevoKey
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || `"SafeMarket Philippines" <${brevoUser}>`,
+        to: toEmail,
+        subject: `[SafeMarket] Your 6-Digit Verification Code: ${otpCode}`,
+        html: htmlContent
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`[Email Service - Brevo SMTP] OTP email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
+      return { success: true, delivered: true, messageId: info.messageId, provider: 'brevo_smtp' };
+    } catch (brevoErr) {
+      console.error(`[Email Service - Brevo SMTP Error] ${brevoErr.message}`);
+      console.log(`[Email Service] Retrying via fallback transports...`);
+    }
+  }
+
+  // 2. Secondary Priority: Direct Gmail SSL Transporter (Port 465)
   if (emailUser && emailPass) {
     try {
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
-        secure: true, // SSL port 465 for Cloud Servers
+        secure: true,
         auth: {
           user: emailUser,
           pass: emailPass
@@ -88,11 +126,10 @@ const sendOtpEmail = async (toEmail, otpCode, firstName = 'User') => {
       return { success: true, delivered: true, messageId: info.messageId, provider: 'gmail_ssl' };
     } catch (gmailErr) {
       console.error(`[Email Service - Direct Gmail SSL Error] ${gmailErr.message}`);
-      console.log(`[Email Service] Retrying via Resend API / Secondary Transport...`);
     }
   }
 
-  // 2. Secondary Backup: Resend API if configured
+  // 3. Backup: Resend API if configured
   if (resendApiKey && resendApiKey.startsWith('re_')) {
     try {
       const resend = new Resend(resendApiKey);
