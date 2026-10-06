@@ -443,6 +443,7 @@ export default function Messages() {
               >
                 <input
                   type="text"
+                  maxLength={50}
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
                   placeholder="Type a message (e.g. Can we meet at Trinoma on Saturday?)..."

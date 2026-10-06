@@ -351,7 +351,7 @@ export default function BecomeSeller() {
                   Seller Profile Information (Optional)
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Add an optional seller bio or image to help buyers get to know you.
+                  Add an optional seller bio to help buyers get to know you.
                 </p>
               </div>
 
@@ -373,18 +373,6 @@ export default function BecomeSeller() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Profile Picture URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={profileImage}
-                    onChange={(e) => setProfileImage(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500"
-                  />
-                </div>
               </div>
 
               <div className="pt-4 flex items-center justify-between">

@@ -83,6 +83,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    passwordResetTokenHash: {
+      type: String,
+      default: null
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null
+    },
+    passwordChangedAt: {
+      type: Date,
+      default: null
+    },
     // Seller activation profile
     sellerProfile: {
       isSeller: {

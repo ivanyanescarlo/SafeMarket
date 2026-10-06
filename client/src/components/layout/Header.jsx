@@ -86,14 +86,9 @@ export default function Header() {
               alt="SafeMarket Logo"
               className="w-10 h-10 rounded-xl object-contain group-hover:scale-105 transition-transform"
             />
-            <div className="flex flex-col">
-              <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                Safe<span className="text-safegreen-600">Market</span>
-              </span>
-              <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase">
-                {isAdmin ? 'Admin' : 'Secure PH Marketplace'}
-              </span>
-            </div>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">
+              Safe<span className="text-safegreen-600">Market</span>
+            </span>
           </Link>
 
           {/* 2. Search Bar (Hidden for Admin) */}
@@ -106,6 +101,7 @@ export default function Header() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  maxLength={50}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search second-hand phones, laptops, bikes, furniture..."
@@ -130,6 +126,7 @@ export default function Header() {
             {!isAdmin && (
               <Link
                 to="/products"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="text-sm font-semibold text-slate-700 hover:text-safegreen-600 px-2.5 py-1.5 rounded-lg transition-colors hidden sm:inline-flex items-center gap-1"
               >
                 Browse
@@ -165,7 +162,7 @@ export default function Header() {
                 className="relative p-2 text-slate-600 hover:text-safegreen-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
+                {user && cartCount > 0 && (
                   <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-slate-950 bg-amber-400 rounded-full border-2 border-white shadow-xs">
                     {cartCount > 9 ? '9+' : cartCount}
                   </span>

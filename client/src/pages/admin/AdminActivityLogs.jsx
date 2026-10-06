@@ -93,6 +93,7 @@ export default function AdminActivityLogs() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              maxLength={50}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search action, user, details..."

@@ -47,9 +47,15 @@ export default function VerifyOtp() {
     try {
       const data = await verifyOtp(email, otp.trim());
       if (data.success) {
-        setSuccessMsg('Account verified successfully! Redirecting to SafeMarket...');
+        setSuccessMsg('Account verified successfully! Redirecting you to log in...');
         setTimeout(() => {
-          navigate('/');
+          navigate('/login', {
+            replace: true,
+            state: {
+              email,
+              message: 'Your account is verified. Please log in to continue.'
+            }
+          });
         }, 1500);
       }
     } catch (err) {
@@ -122,6 +128,7 @@ export default function VerifyOtp() {
               </label>
               <input
                 type="email"
+                maxLength={50}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -148,11 +155,6 @@ export default function VerifyOtp() {
               Code expires in 10 minutes.
             </p>
 
-            {/* Spam / Junk Folder Reminder */}
-            <div className="mt-3 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-left text-xs text-emerald-900 space-y-1">
-              <span className="font-bold block text-emerald-950">⚡ Quick Email Tip:</span>
-              <p>Check your <strong>Spam, Junk, or Promotions</strong> folder if you don't see the code in your main inbox.</p>
-            </div>
           </div>
 
           <button
@@ -164,7 +166,7 @@ export default function VerifyOtp() {
               <span>Verifying Code...</span>
             ) : (
               <>
-                <span>Verify OTP & Enter Marketplace</span>
+                <span>Verify Email & Continue to Login</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

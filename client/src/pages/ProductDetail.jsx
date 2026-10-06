@@ -38,6 +38,19 @@ export default function ProductDetail() {
   const [msgLoading, setMsgLoading] = useState(false);
   const [adminActionLoading, setAdminActionLoading] = useState(false);
 
+  const handleToggleCart = () => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: `/product/${id}` } } });
+      return;
+    }
+
+    if (isInCart(listing._id)) {
+      removeFromCart(listing._id);
+    } else {
+      addToCart(listing);
+    }
+  };
+
   const handleAdminTakedown = async () => {
     const reason = prompt(
       `Enter admin reason/note for taking down "${listing.title}":`,
@@ -102,7 +115,7 @@ export default function ProductDetail() {
     window.scrollTo(0, 0);
   }, [id]);
 
-  const handleStartMessage = async (customMessage = null) => {
+  const handleStartMessage = async () => {
     if (!user) {
       navigate('/login', { state: { from: { pathname: `/product/${id}` } } });
       return;
@@ -115,13 +128,10 @@ export default function ProductDetail() {
     }
 
     setMsgLoading(true);
-    const defaultMsg = `Hi ${seller.firstName || 'Seller'}! 🙋‍♂️ I am interested in buying your "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`;
-    
     try {
       const res = await api.post('/messages/start', {
         receiverId: sellerObjId,
-        listingId: listing._id,
-        initialMessage: typeof customMessage === 'string' && customMessage.trim() ? customMessage : defaultMsg
+        listingId: listing._id
       });
 
       if (res.success && res.conversation) {
@@ -437,18 +447,18 @@ export default function ProductDetail() {
                 <>
                   <button
                     type="button"
-                    onClick={() => handleStartMessage(`Hi ${seller.firstName}! 🙋‍♂️ I am interested in buying your "${listing.title}" (${formattedPrice}). Is this still available for meetup in ${listing.location?.cityMunicipality || 'your area'}?`)}
+                    onClick={handleStartMessage}
                     disabled={msgLoading}
                     className="w-full py-3.5 px-4 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-sm rounded-xl shadow-md shadow-safegreen-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span>{msgLoading ? 'Connecting...' : "🙋‍♂️ I'm Interested! Send Inquiry"}</span>
+                    <span>{msgLoading ? 'Connecting...' : 'Message Seller'}</span>
                   </button>
 
                   {isInCart(listing._id) ? (
                     <button
                       type="button"
-                      onClick={() => removeFromCart(listing._id)}
+                      onClick={handleToggleCart}
                       className="w-full py-3 px-4 bg-emerald-100 border border-emerald-300 text-safegreen-900 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4 text-safegreen-700" />
@@ -457,7 +467,7 @@ export default function ProductDetail() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => addToCart(listing)}
+                      onClick={handleToggleCart}
                       className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
                     >
                       <ShoppingCart className="w-4 h-4" />

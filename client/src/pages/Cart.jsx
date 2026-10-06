@@ -34,8 +34,7 @@ export default function Cart() {
     try {
       const res = await api.post('/messages/start', {
         receiverId: sellerId,
-        listingId: item._id,
-        initialMessage: `Hi! I saved your "${item.title}" in my SafeMarket Cart. Is this still available for meetup in ${item.location?.cityMunicipality || 'your area'}?`
+        listingId: item._id
       });
 
       if (res.success && res.conversation) {
@@ -63,7 +62,7 @@ export default function Cart() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                My Saved Cart ({cart.length})
+                My Saved Cart ({user ? cart.length : 0})
               </h1>
               <p className="text-xs text-slate-500">
                 Review saved items, compare Gemini AI scam risk ratings, and message sellers for local meetups.
@@ -83,7 +82,24 @@ export default function Cart() {
         </div>
       </div>
 
-      {cart.length === 0 ? (
+      {!user ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs max-w-lg mx-auto space-y-4">
+          <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+            <ShoppingCart className="w-8 h-8" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Log in to view your saved cart</h2>
+          <p className="text-xs text-slate-500">
+            Your saved items will be available again after you log back in.
+          </p>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+          >
+            <span>Log In</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      ) : cart.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs max-w-lg mx-auto space-y-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <ShoppingCart className="w-8 h-8" />

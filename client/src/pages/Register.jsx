@@ -184,6 +184,7 @@ export default function Register() {
                 <input
                   ref={firstNameRef}
                   type="text"
+                  maxLength={50}
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
@@ -206,6 +207,7 @@ export default function Register() {
                 <input
                   ref={lastNameRef}
                   type="text"
+                  maxLength={50}
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -230,6 +232,7 @@ export default function Register() {
                 <input
                   ref={usernameRef}
                   type="text"
+                  maxLength={50}
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
@@ -285,6 +288,7 @@ export default function Register() {
               <input
                 ref={emailRef}
                 type="email"
+                maxLength={50}
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
@@ -309,6 +313,7 @@ export default function Register() {
                   <input
                     ref={passwordRef}
                     type={showPassword ? 'text' : 'password'}
+                    maxLength={50}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
@@ -340,6 +345,7 @@ export default function Register() {
                   <input
                     ref={confirmPasswordRef}
                     type={showConfirmPassword ? 'text' : 'password'}
+                    maxLength={50}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}

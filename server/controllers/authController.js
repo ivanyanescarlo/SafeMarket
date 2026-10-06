@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { logActivity } = require('../utils/logger');
-const { sendOtpEmail } = require('../utils/emailService');
+const { sendOtpEmail, sendPasswordResetEmail } = require('../utils/emailService');
 const { sendSmsOtp } = require('../utils/smsService');
 
 // Generate JWT Token
@@ -218,8 +219,6 @@ exports.verifyOtp = async (req, res) => {
     user.otpExpiresAt = null;
     await user.save();
 
-    const token = generateToken(user._id);
-
     await logActivity({
       userId: user._id,
       userEmail: user.email,
@@ -232,21 +231,7 @@ exports.verifyOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Account successfully verified! Welcome to SafeMarket.',
-      token,
-      user: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
-        mobileNumber: user.mobileNumber,
-        location: user.location,
-        role: user.role,
-        sellerProfile: user.sellerProfile,
-        profileImage: user.profileImage,
-        isVerified: user.isVerified
-      }
+      message: 'Account successfully verified. Please log in to continue.'
     });
   } catch (error) {
     console.error('OTP verification error:', error);
@@ -324,6 +309,133 @@ exports.resendOtp = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to resend verification code.'
+    });
+  }
+};
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Email a one-time password reset link
+ */
+exports.forgotPassword = async (req, res) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.toLowerCase().trim() : '';
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.'
+      });
+    }
+
+    const user = await User.findOne({ email, isVerified: true });
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If a verified account exists for that email, password reset instructions will be sent.'
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    await user.save();
+
+    const frontendUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = new URL('/reset-password', frontendUrl);
+    resetUrl.searchParams.set('email', user.email);
+    resetUrl.searchParams.set('token', resetToken);
+    const delivery = await sendPasswordResetEmail(user.email, resetUrl.toString(), user.firstName);
+    if (!delivery.delivered) {
+      user.passwordResetTokenHash = null;
+      user.passwordResetExpiresAt = null;
+      await user.save();
+      console.error('[Password reset] No email provider delivered the reset link.');
+      return res.status(503).json({
+        success: false,
+        message: 'Password reset email could not be sent. Please try again later.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'If a verified account exists for that email, password reset instructions will be sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to process the password reset request. Please try again later.'
+    });
+  }
+};
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Set a new password using a one-time reset link
+ */
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, token, password, confirmPassword } = req.body;
+    if (
+      typeof email !== 'string' ||
+      typeof token !== 'string' ||
+      typeof password !== 'string' ||
+      typeof confirmPassword !== 'string' ||
+      !email.trim() ||
+      !token ||
+      !password ||
+      !confirmPassword
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide the reset link details and both password fields.'
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters.'
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match.'
+      });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: new Date() },
+      isVerified: true
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'This password reset link is invalid or has expired. Request a new one.'
+      });
+    }
+
+    user.password = password;
+    user.passwordChangedAt = new Date();
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your password has been reset. Please log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to reset your password. Please try again.'
     });
   }
 };

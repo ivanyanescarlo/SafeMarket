@@ -141,6 +141,7 @@ function CustomScrollDropdown({
               <input
                 ref={searchInputRef}
                 type="text"
+                maxLength={50}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={`Search ${label.toLowerCase()}...`}
@@ -210,7 +211,7 @@ export default function LocationSelector({
   };
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-3.5 ${className}`}>
+    <div className={`grid grid-cols-1 gap-3.5 ${className}`}>
       {/* Province Dropdown - Fixed to Pangasinan */}
       <CustomScrollDropdown
         label="Province"

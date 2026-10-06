@@ -51,8 +51,6 @@ export default function ProductCatalog() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [condition, setCondition] = useState(searchParams.get('condition') || 'All');
-  const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
-  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [province, setProvince] = useState(searchParams.get('province') || '');
   const [cityMunicipality, setCityMunicipality] = useState(searchParams.get('city') || '');
   const [riskLevel, setRiskLevel] = useState(searchParams.get('riskLevel') || 'All');
@@ -65,9 +63,6 @@ export default function ProductCatalog() {
 
   // Sync state if URL search query changes
   useEffect(() => {
-    if (searchParams.get('search') !== null) {
-      setSearch(searchParams.get('search'));
-    }
     if (searchParams.get('category')) {
       setCategory(searchParams.get('category'));
     }
@@ -77,15 +72,13 @@ export default function ProductCatalog() {
   }, [searchParams]);
 
   // Fetch listings from MongoDB Express API
-  const fetchListings = async () => {
+  const fetchListings = async (searchValue = search) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search) params.set('search', search);
+      if (searchValue) params.set('search', searchValue);
       if (category && category !== 'All') params.set('category', category);
       if (condition && condition !== 'All') params.set('condition', condition);
-      if (minPrice) params.set('minPrice', minPrice);
-      if (maxPrice) params.set('maxPrice', maxPrice);
       if (province && province !== 'All') params.set('province', province);
       if (cityMunicipality && cityMunicipality !== 'All') params.set('cityMunicipality', cityMunicipality);
       if (riskLevel && riskLevel !== 'All') params.set('riskLevel', riskLevel);
@@ -107,6 +100,14 @@ export default function ProductCatalog() {
   };
 
   useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    if (urlSearch !== search) {
+      setSearch(urlSearch);
+      fetchListings(urlSearch);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchListings();
   }, [category, condition, sort, province, cityMunicipality, riskLevel]);
 
@@ -119,8 +120,6 @@ export default function ProductCatalog() {
     setSearch('');
     setCategory('All');
     setCondition('All');
-    setMinPrice('');
-    setMaxPrice('');
     setProvince('');
     setCityMunicipality('');
     setRiskLevel('All');
@@ -134,14 +133,11 @@ export default function ProductCatalog() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-safegreen-700 bg-safegreen-50 border border-safegreen-200 px-3 py-1 rounded-full">
-            Philippine Second-Hand Marketplace
+            Second-Hand Marketplace
           </span>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-2">
-            Verified Item Catalog
+            Philippine Verified Items
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Browse <strong className="text-slate-900 font-extrabold">{total}</strong> active items screened with Gemini AI scam prevention.
-          </p>
         </div>
 
         {/* Search input in catalog */}
@@ -150,6 +146,7 @@ export default function ProductCatalog() {
             <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              maxLength={50}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by keywords..."
@@ -222,37 +219,6 @@ export default function ProductCatalog() {
             options={CONDITIONS}
             buttonClassName="!py-2 !rounded-lg !text-xs !bg-slate-50"
           />
-
-          {/* Price Range */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Price Range (₱)
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                placeholder="Min ₱"
-                className="w-1/2 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-safegreen-500"
-              />
-              <span className="text-slate-400 text-xs">-</span>
-              <input
-                type="number"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                placeholder="Max ₱"
-                className="w-1/2 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-safegreen-500"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={fetchListings}
-              className="mt-2 w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold"
-            >
-              Apply Price
-            </button>
-          </div>
 
           {/* Gemini AI Risk Level Filter */}
           <CustomSelect

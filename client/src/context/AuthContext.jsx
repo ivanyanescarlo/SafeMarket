@@ -57,13 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verifyOtp = async (email, otp) => {
-    const data = await api.post('/auth/verify-otp', { email, otp });
-    if (data.success && data.token) {
-      setAuthToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('safemarket_user', JSON.stringify(data.user));
-    }
-    return data;
+    return await api.post('/auth/verify-otp', { email, otp });
   };
 
   const resendOtp = async (email, channel = 'both') => {

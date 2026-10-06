@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 
 // Route imports
@@ -33,6 +34,8 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'online',
     system: 'SafeMarket Scam Prevention Marketplace API',
+    database: mongoose.connection.name || null,
+    databaseConnected: mongoose.connection.readyState === 1,
     timestamp: new Date().toISOString()
   });
 });

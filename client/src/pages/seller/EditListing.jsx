@@ -248,6 +248,7 @@ export default function EditListing() {
             </label>
             <input
               type="text"
+              maxLength={50}
               name="title"
               value={formData.title}
               onChange={handleChange}
@@ -321,6 +322,7 @@ export default function EditListing() {
                 </label>
                 <input
                   type="text"
+                  maxLength={50}
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
@@ -335,6 +337,7 @@ export default function EditListing() {
                 </label>
                 <input
                   type="text"
+                  maxLength={50}
                   name="model"
                   value={formData.model}
                   onChange={handleChange}

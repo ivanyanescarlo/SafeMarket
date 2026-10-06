@@ -29,6 +29,13 @@ const protect = async (req, res, next) => {
       });
     }
 
+    if (user.passwordChangedAt && decoded.iat <= Math.floor(user.passwordChangedAt.getTime() / 1000)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your password has changed. Please login again.'
+      });
+    }
+
     if (user.status === 'suspended') {
       return res.status(403).json({
         success: false,
@@ -59,7 +66,10 @@ const optionalAuth = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'safemarket_super_secure_jwt_secret_key_2026_ph_security');
-      req.user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id).select('-password');
+      if (user && (!user.passwordChangedAt || decoded.iat > Math.floor(user.passwordChangedAt.getTime() / 1000))) {
+        req.user = user;
+      }
     } catch (e) {
       // Ignore token failure for optional
     }

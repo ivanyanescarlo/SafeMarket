@@ -9,7 +9,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [loginId, setLoginId] = useState('');
+  const [loginId, setLoginId] = useState(location.state?.email || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -73,6 +73,12 @@ export default function Login() {
           </div>
         )}
 
+        {location.state?.message && (
+          <div role="status" className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm">
+            {location.state.message}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -80,6 +86,7 @@ export default function Login() {
             </label>
             <input
               type="text"
+              maxLength={50}
               value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
               required
@@ -89,21 +96,15 @@ export default function Login() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Password
               </label>
-              <button
-                type="button"
-                onClick={() => alert('For password recovery in SafeMarket demo, please contact admin@safemarket.ph or re-register with a new test account.')}
-                className="text-xs font-semibold text-safegreen-700 hover:underline"
-              >
-                Forgot Password?
-              </button>
             </div>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                maxLength={50}
                 value={password}
                 onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
                 required
@@ -117,6 +118,14 @@ export default function Login() {
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
+            </div>
+            <div className="mt-1 text-left">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-safegreen-700 hover:underline"
+              >
+                Forgot Password?
+              </Link>
             </div>
           </div>
 

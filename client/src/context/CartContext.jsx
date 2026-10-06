@@ -1,35 +1,40 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 const CartContext = createContext();
+const CART_STORAGE_KEY = 'safemarket_cart';
+
+const persistCart = (cart) => {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch (error) {
+    console.error('Failed to save cart:', error);
+  }
+};
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(() => {
     try {
-      const saved = localStorage.getItem('safemarket_cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
+      const saved = localStorage.getItem(CART_STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Failed to load cart:', error);
       return [];
     }
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('safemarket_cart', JSON.stringify(cart));
-    } catch (e) {
-      console.error('Failed to save cart:', e);
-    }
-  }, [cart]);
-
   const addToCart = (product) => {
     if (!product || !product._id) return;
-    setCart((prev) => {
-      if (prev.some((item) => item._id === product._id)) return prev;
-      return [...prev, product];
-    });
+    if (cart.some((item) => item._id === product._id)) return;
+    const updatedCart = [...cart, product];
+    persistCart(updatedCart);
+    setCart(updatedCart);
   };
 
   const removeFromCart = (productId) => {
-    setCart((prev) => prev.filter((item) => item._id !== productId));
+    const updatedCart = cart.filter((item) => item._id !== productId);
+    persistCart(updatedCart);
+    setCart(updatedCart);
   };
 
   const isInCart = (productId) => {
@@ -37,6 +42,7 @@ export function CartProvider({ children }) {
   };
 
   const clearCart = () => {
+    persistCart([]);
     setCart([]);
   };
 

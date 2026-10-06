@@ -316,6 +316,7 @@ export default function UserProfile() {
                 </label>
                 <input
                   type="text"
+                  maxLength={50}
                   value={editForm.firstName}
                   onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
                   required
@@ -328,6 +329,7 @@ export default function UserProfile() {
                 </label>
                 <input
                   type="text"
+                  maxLength={50}
                   value={editForm.lastName}
                   onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                   required

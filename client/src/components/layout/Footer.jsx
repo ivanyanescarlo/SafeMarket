@@ -24,9 +24,6 @@ export default function Footer() {
               </p>
             </div>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-safegreen-800/60 text-safegreen-300 border border-safegreen-700/50">
-            Powered by Gemini AI Listing Risk Analyzer
-          </span>
         </div>
       </div>
 
@@ -80,7 +77,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
-          <p>© {new Date().getFullYear()} SafeMarket Philippines. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SafeMarket Philippines.</p>
         </div>
       </div>
     </footer>

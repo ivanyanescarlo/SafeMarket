@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldAlert, CheckCircle, Ban, UserCheck, Shield } from 'lucide-react';
+import { Search, ShieldAlert, CheckCircle, Ban, UserCheck, Shield, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 
 export default function AdminUsers({ onAction }) {
@@ -79,6 +79,31 @@ export default function AdminUsers({ onAction }) {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    const confirmationEmail = prompt(
+      `Permanently delete @${user.username}? Enter the account email to confirm:`,
+      ''
+    );
+    if (confirmationEmail === null) return;
+    if (confirmationEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
+      alert('The email does not match this account. No changes were made.');
+      return;
+    }
+
+    setActionLoading(user._id);
+    try {
+      await api.delete(`/admin/users/${user._id}`, {
+        body: JSON.stringify({ confirmationEmail })
+      });
+      setUsers((currentUsers) => currentUsers.filter((item) => item._id !== user._id));
+      if (onAction) onAction();
+    } catch (err) {
+      alert(err.message || 'Failed to delete user account.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
       
@@ -88,6 +113,9 @@ export default function AdminUsers({ onAction }) {
           <h2 className="text-lg font-bold text-slate-900">
             User Account Management
           </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Only accounts that have completed email verification are shown.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
@@ -95,6 +123,7 @@ export default function AdminUsers({ onAction }) {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              maxLength={50}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, username, email..."
@@ -203,18 +232,30 @@ export default function AdminUsers({ onAction }) {
                   </td>
 
                   <td className="py-3 px-4 text-right">
-                    <button
-                      type="button"
-                      disabled={actionLoading === u._id}
-                      onClick={() => handleToggleStatus(u)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                        u.status === 'active'
-                          ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                      }`}
-                    >
-                      {u.status === 'active' ? 'Suspend' : 'Activate'}
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={actionLoading === u._id}
+                        onClick={() => handleToggleStatus(u)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                          u.status === 'active'
+                            ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                        }`}
+                      >
+                        {u.status === 'active' ? 'Suspend' : 'Activate'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={actionLoading === u._id}
+                        onClick={() => handleDeleteUser(u)}
+                        aria-label={`Delete ${u.email}`}
+                        title="Permanently delete account"
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

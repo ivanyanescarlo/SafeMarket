@@ -1,11 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Star, ShoppingCart, Check } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ListingCard({ listing }) {
   const { addToCart, removeFromCart, isInCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!listing) return null;
 
@@ -26,6 +29,10 @@ export default function ListingCard({ listing }) {
   const handleCartClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: `/product/${listing._id}` } } });
+      return;
+    }
     if (inCart) {
       removeFromCart(listing._id);
     } else {

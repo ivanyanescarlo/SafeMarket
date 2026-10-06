@@ -11,10 +11,10 @@ const { logActivity } = require('../utils/logger');
  */
 exports.getStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalBuyers = await User.countDocuments({ role: 'buyer' });
-    const totalSellers = await User.countDocuments({ role: 'seller' });
-    const totalSuspendedUsers = await User.countDocuments({ status: 'suspended' });
+    const totalUsers = await User.countDocuments({ isVerified: true });
+    const totalBuyers = await User.countDocuments({ role: 'buyer', isVerified: true });
+    const totalSellers = await User.countDocuments({ role: 'seller', isVerified: true });
+    const totalSuspendedUsers = await User.countDocuments({ status: 'suspended', isVerified: true });
 
     const totalListings = await Listing.countDocuments();
     const activeListings = await Listing.countDocuments({ status: 'active' });
@@ -29,7 +29,7 @@ exports.getStats = async (req, res) => {
     // Compute dynamic weekly activity trend from database
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const allListings = await Listing.find({}, 'createdAt');
-    const allUsers = await User.find({}, 'createdAt');
+    const allUsers = await User.find({ isVerified: true }, 'createdAt');
 
     const dayCounts = {
       Mon: { day: 'Mon', listings: 0, users: 0 },
@@ -100,7 +100,7 @@ exports.getStats = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { search, role, status, page = 1, limit = 50 } = req.query;
-    const query = {};
+    const query = { isVerified: true };
 
     if (search) {
       const searchRegex = new RegExp(search.trim(), 'i');
@@ -212,6 +212,67 @@ exports.updateUserStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update user status.'
+    });
+  }
+};
+
+/**
+ * @route   DELETE /api/admin/users/:id
+ * @desc    Delete a user account after email confirmation
+ */
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const confirmationEmail = typeof req.body.confirmationEmail === 'string'
+      ? req.body.confirmationEmail.toLowerCase().trim()
+      : '';
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
+
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Administrators cannot delete their own account.'
+      });
+    }
+
+    if (confirmationEmail !== user.email.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Confirmation email does not match this account.'
+      });
+    }
+
+    await logActivity({
+      userId: req.user._id,
+      userEmail: req.user.email,
+      action: 'ADMIN_USER_DELETED',
+      targetType: 'User',
+      targetId: user._id,
+      details: {
+        deletedUsername: user.username,
+        deletedEmail: user.email
+      },
+      ip: req.ip
+    });
+
+    await user.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: `Account ${user.email} was deleted.`
+    });
+  } catch (error) {
+    console.error('deleteUser error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete user account.'
     });
   }
 };
