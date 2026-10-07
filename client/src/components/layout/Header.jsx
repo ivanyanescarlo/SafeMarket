@@ -27,7 +27,7 @@ import safeMarketLogo from '../../assets/safemarket_logo.png';
 export default function Header() {
   const { user, isSeller, isAdmin, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useTheme();
-  const { cartCount } = useCart();
+  const { unseenCartItemCount } = useCart();
   const {
     unreadCount,
     unreadMessageCount,
@@ -162,9 +162,9 @@ export default function Header() {
                 className="relative p-2 text-slate-600 hover:text-safegreen-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
-                {user && cartCount > 0 && (
+                {user && unseenCartItemCount > 0 && (
                   <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-slate-950 bg-amber-400 rounded-full border-2 border-white shadow-xs">
-                    {cartCount > 9 ? '9+' : cartCount}
+                    {unseenCartItemCount > 9 ? '9+' : unseenCartItemCount}
                   </span>
                 )}
               </Link>

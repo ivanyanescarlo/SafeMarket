@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2, MessageSquare, ArrowRight, ShieldCheck, MapPin, ArrowLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -7,7 +7,11 @@ import RiskBadge from '../components/common/RiskBadge';
 import api from '../services/api';
 
 export default function Cart() {
-  const { cart, removeFromCart, clearCart } = useCart();
+  const { cart, removeFromCart, clearCart, markCartAsSeen } = useCart();
+
+  useEffect(() => {
+    markCartAsSeen();
+  }, [markCartAsSeen]);
   const { user } = useAuth();
   const navigate = useNavigate();
 

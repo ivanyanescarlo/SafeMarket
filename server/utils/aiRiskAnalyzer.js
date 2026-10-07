@@ -1,4 +1,35 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const crypto = require('crypto');
+
+const ANALYSIS_CACHE_TTL_MS = 10 * 60 * 1000;
+const MAX_CACHED_ANALYSES = 100;
+const GEMINI_TIMEOUT_MS = 8000;
+const analysisCache = new Map();
+
+const getListingCacheKey = (listingData) =>
+  crypto.createHash('sha256').update(JSON.stringify(listingData)).digest('hex');
+
+const getCachedAnalysis = (key) => {
+  const cached = analysisCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    analysisCache.delete(key);
+    return null;
+  }
+  return cached.analysis;
+};
+
+const cacheAnalysis = (key, analysis) => {
+  if (analysisCache.size >= MAX_CACHED_ANALYSES) {
+    const oldestKey = analysisCache.keys().next().value;
+    if (oldestKey) analysisCache.delete(oldestKey);
+  }
+  analysisCache.set(key, {
+    analysis,
+    expiresAt: Date.now() + ANALYSIS_CACHE_TTL_MS
+  });
+  return analysis;
+};
 
 // Heuristic fallback analyzer if external API is unreachable or rate limited
 function heuristicAnalyze(listingData) {
@@ -106,11 +137,15 @@ function heuristicAnalyze(listingData) {
  */
 async function analyzeListingWithGemini(listingData) {
   const { title, description, price, category, condition, location, brand, model } = listingData;
+  const cacheKey = getListingCacheKey({ title, description, price, category, condition, location, brand, model });
+  const cachedAnalysis = getCachedAnalysis(cacheKey);
+  if (cachedAnalysis) return cachedAnalysis;
+
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     console.warn('[Gemini AI] No GEMINI_API_KEY found, using heuristic analyzer');
-    return heuristicAnalyze(listingData);
+    return cacheAnalysis(cacheKey, heuristicAnalyze(listingData));
   }
 
   try {
@@ -121,6 +156,8 @@ async function analyzeListingWithGemini(listingData) {
         responseMimeType: 'application/json',
         temperature: 0.2
       }
+    }, {
+      timeout: GEMINI_TIMEOUT_MS
     });
 
     const prompt = `You are SafeMarket AI Listing Risk Analyzer, an automated scam prevention system for a Philippine local second-hand community marketplace.
@@ -176,17 +213,17 @@ Ensure "riskLevel" is strictly one of: "Low", "Medium", or "High".
       else level = 'Low';
     }
 
-    return {
+    return cacheAnalysis(cacheKey, {
       riskLevel: level,
       riskIndicators: Array.isArray(parsed.riskIndicators) && parsed.riskIndicators.length > 0 
         ? parsed.riskIndicators 
         : ['Price and description conform to marketplace standards'],
       riskSummary: parsed.riskSummary || 'Standard second-hand marketplace listing.',
       recommendation: parsed.recommendation || 'Meet in a safe public place and inspect the item before finalizing payment.'
-    };
+    });
   } catch (error) {
     console.error(`[Gemini AI] Error during AI analysis: ${error.message}. Engaging heuristic fallback.`);
-    return heuristicAnalyze(listingData);
+    return cacheAnalysis(cacheKey, heuristicAnalyze(listingData));
   }
 }
 

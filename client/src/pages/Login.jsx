@@ -23,15 +23,7 @@ export default function Login() {
     try {
       const data = await login(loginId, password);
       if (data.success) {
-        const user = data.user;
-        // Role based redirection
-        if (user.role === 'admin') {
-          navigate('/admin');
-        } else {
-          // Buyer or Seller
-          const from = location.state?.from?.pathname || '/';
-          navigate(from);
-        }
+        navigate('/');
       }
     } catch (err) {
       if (err.requiresVerification) {

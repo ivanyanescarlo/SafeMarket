@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { logActivity } = require('../utils/logger');
-const { sendOtpEmail, sendPasswordResetEmail } = require('../utils/emailService');
+const { sendOtpEmail, sendPasswordResetOtpEmail } = require('../utils/emailService');
 const { sendSmsOtp } = require('../utils/smsService');
 
 // Generate JWT Token
@@ -62,15 +62,15 @@ exports.register = async (req, res) => {
 
     // Check existing email or username
     const existingEmail = await User.findOne({ email: cleanEmail });
-    if (existingEmail && existingEmail.isVerified) {
+    if (existingEmail) {
       return res.status(400).json({
         success: false,
-        message: 'An account with this email address already exists. Please log in directly.'
+        message: 'An account with this email address is already registered. Please log in or verify your account.'
       });
     }
 
     const existingUsername = await User.findOne({ username: cleanUsername });
-    if (existingUsername && existingUsername._id.toString() !== existingEmail?._id.toString()) {
+    if (existingUsername) {
       return res.status(400).json({
         success: false,
         message: 'This username is already taken. Please choose another username.'
@@ -81,41 +81,22 @@ exports.register = async (req, res) => {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    let user;
-    if (existingEmail && !existingEmail.isVerified) {
-      // Re-use unverified user account: update details & generate new OTP
-      user = existingEmail;
-      user.firstName = firstName.trim();
-      user.lastName = lastName.trim();
-      user.username = cleanUsername;
-      user.password = password; // Will be hashed via pre-save hook
-      user.mobileNumber = mobileNumber.trim();
-      user.location = {
+    const user = await User.create({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
+      password,
+      mobileNumber: mobileNumber.trim(),
+      location: {
         province: province.trim(),
         cityMunicipality: cityMunicipality.trim()
-      };
-      user.otpCode = otp;
-      user.otpExpiresAt = otpExpires;
-      await user.save();
-    } else {
-      // Create new unverified user
-      user = await User.create({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        username: cleanUsername,
-        email: cleanEmail,
-        password,
-        mobileNumber: mobileNumber.trim(),
-        location: {
-          province: province.trim(),
-          cityMunicipality: cityMunicipality.trim()
-        },
-        role: 'buyer',
-        isVerified: false,
-        otpCode: otp,
-        otpExpiresAt: otpExpires
-      });
-    }
+      },
+      role: 'buyer',
+      isVerified: false,
+      otpCode: otp,
+      otpExpiresAt: otpExpires
+    });
 
     // Send OTP via Email and SMS
     await sendOtpEmail(user.email, otp, user.firstName);
@@ -315,7 +296,7 @@ exports.resendOtp = async (req, res) => {
 
 /**
  * @route   POST /api/auth/forgot-password
- * @desc    Email a one-time password reset link
+ * @desc    Email a one-time password reset code
  */
 exports.forgotPassword = async (req, res) => {
   try {
@@ -331,33 +312,35 @@ exports.forgotPassword = async (req, res) => {
     if (!user) {
       return res.status(200).json({
         success: true,
+        codeSent: false,
         message: 'If a verified account exists for that email, password reset instructions will be sent.'
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.passwordResetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const otp = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+    user.passwordResetOtpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
     await user.save();
 
-    const frontendUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    const resetUrl = new URL('/reset-password', frontendUrl);
-    resetUrl.searchParams.set('email', user.email);
-    resetUrl.searchParams.set('token', resetToken);
-    const delivery = await sendPasswordResetEmail(user.email, resetUrl.toString(), user.firstName);
+    const delivery = await sendPasswordResetOtpEmail(user.email, otp, user.firstName);
     if (!delivery.delivered) {
-      user.passwordResetTokenHash = null;
-      user.passwordResetExpiresAt = null;
+      user.passwordResetOtpHash = null;
+      user.passwordResetOtpExpiresAt = null;
+      user.passwordResetOtpAttempts = 0;
       await user.save();
-      console.error('[Password reset] No email provider delivered the reset link.');
+      console.error('[Password reset] No email provider delivered the OTP.');
       return res.status(503).json({
         success: false,
-        message: 'Password reset email could not be sent. Please try again later.'
+        message: 'Password reset code could not be sent. Please try again later.'
       });
     }
 
     return res.status(200).json({
       success: true,
+      codeSent: true,
       message: 'If a verified account exists for that email, password reset instructions will be sent.'
     });
   } catch (error) {
@@ -370,8 +353,95 @@ exports.forgotPassword = async (req, res) => {
 };
 
 /**
+ * @route   POST /api/auth/verify-reset-otp
+ * @desc    Verify a password reset OTP and issue a short-lived reset token
+ */
+exports.verifyResetOtp = async (req, res) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.toLowerCase().trim() : '';
+    const otp = typeof req.body.otp === 'string' ? req.body.otp.trim() : '';
+    if (!email || !/^\S+@\S+\.\S+$/.test(email) || !/^\d{6}$/.test(otp)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address and 6-digit code.'
+      });
+    }
+
+    const user = await User.findOne({ email, isVerified: true });
+    if (!user || !user.passwordResetOtpHash || !user.passwordResetOtpExpiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: 'There is no active password reset code for this email. Request a new code.'
+      });
+    }
+
+    if (user.passwordResetOtpExpiresAt <= new Date()) {
+      user.passwordResetOtpHash = null;
+      user.passwordResetOtpExpiresAt = null;
+      user.passwordResetOtpAttempts = 0;
+      await user.save();
+      return res.status(400).json({
+        success: false,
+        message: 'This password reset code has expired. Request a new code.'
+      });
+    }
+
+    if (user.passwordResetOtpAttempts >= 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Too many incorrect attempts. Request a new password reset code.'
+      });
+    }
+
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const storedOtpHashIsValid = /^[a-f\d]{64}$/i.test(user.passwordResetOtpHash);
+    const otpMatches = storedOtpHashIsValid && crypto.timingSafeEqual(
+      Buffer.from(user.passwordResetOtpHash, 'hex'),
+      Buffer.from(otpHash, 'hex')
+    );
+
+    if (!otpMatches) {
+      user.passwordResetOtpAttempts += 1;
+      const attemptsRemaining = 5 - user.passwordResetOtpAttempts;
+      if (attemptsRemaining <= 0) {
+        user.passwordResetOtpHash = null;
+        user.passwordResetOtpExpiresAt = null;
+        user.passwordResetOtpAttempts = 0;
+      }
+      await user.save();
+      return res.status(400).json({
+        success: false,
+        message: attemptsRemaining > 0
+          ? `That code is incorrect or was replaced by a newer one. Use the latest code from your email. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.`
+          : 'Too many incorrect attempts. Request a new password reset code.'
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Code verified. Choose a new password.',
+      resetToken
+    });
+  } catch (error) {
+    console.error('Password reset OTP verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to verify the code. Please try again.'
+    });
+  }
+};
+
+/**
  * @route   POST /api/auth/reset-password
- * @desc    Set a new password using a one-time reset link
+ * @desc    Set a new password using a verified reset token
  */
 exports.resetPassword = async (req, res) => {
   try {
@@ -388,7 +458,7 @@ exports.resetPassword = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide the reset link details and both password fields.'
+        message: 'Please provide the verified reset session and both password fields.'
       });
     }
 
@@ -417,7 +487,7 @@ exports.resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'This password reset link is invalid or has expired. Request a new one.'
+        message: 'This password reset session is invalid or has expired. Request a new code.'
       });
     }
 
@@ -425,6 +495,9 @@ exports.resetPassword = async (req, res) => {
     user.passwordChangedAt = new Date();
     user.passwordResetTokenHash = null;
     user.passwordResetExpiresAt = null;
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
     await user.save();
 
     return res.status(200).json({

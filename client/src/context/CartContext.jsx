@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 
 const CartContext = createContext();
 const CART_STORAGE_KEY = 'safemarket_cart';
+const UNSEEN_CART_ITEMS_STORAGE_KEY = 'safemarket_unseen_cart_items';
 
 const persistCart = (cart) => {
   try {
@@ -22,19 +23,43 @@ export function CartProvider({ children }) {
       return [];
     }
   });
+  const [unseenCartItemIds, setUnseenCartItemIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(UNSEEN_CART_ITEMS_STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Failed to load unseen cart items:', error);
+      return [];
+    }
+  });
+
+  const persistUnseenCartItems = (itemIds) => {
+    try {
+      localStorage.setItem(UNSEEN_CART_ITEMS_STORAGE_KEY, JSON.stringify(itemIds));
+    } catch (error) {
+      console.error('Failed to save unseen cart items:', error);
+    }
+  };
 
   const addToCart = (product) => {
     if (!product || !product._id) return;
     if (cart.some((item) => item._id === product._id)) return;
     const updatedCart = [...cart, product];
+    const updatedUnseenCartItemIds = [...new Set([...unseenCartItemIds, product._id])];
     persistCart(updatedCart);
+    persistUnseenCartItems(updatedUnseenCartItemIds);
     setCart(updatedCart);
+    setUnseenCartItemIds(updatedUnseenCartItemIds);
   };
 
   const removeFromCart = (productId) => {
     const updatedCart = cart.filter((item) => item._id !== productId);
+    const updatedUnseenCartItemIds = unseenCartItemIds.filter((itemId) => itemId !== productId);
     persistCart(updatedCart);
+    persistUnseenCartItems(updatedUnseenCartItemIds);
     setCart(updatedCart);
+    setUnseenCartItemIds(updatedUnseenCartItemIds);
   };
 
   const isInCart = (productId) => {
@@ -43,10 +68,19 @@ export function CartProvider({ children }) {
 
   const clearCart = () => {
     persistCart([]);
+    persistUnseenCartItems([]);
     setCart([]);
+    setUnseenCartItemIds([]);
   };
 
   const cartCount = cart.length;
+  const unseenCartItemCount = unseenCartItemIds.length;
+
+  const markCartAsSeen = useCallback(() => {
+    if (unseenCartItemIds.length === 0) return;
+    persistUnseenCartItems([]);
+    setUnseenCartItemIds([]);
+  }, [unseenCartItemIds.length]);
 
   return (
     <CartContext.Provider
@@ -56,7 +90,9 @@ export function CartProvider({ children }) {
         removeFromCart,
         isInCart,
         clearCart,
-        cartCount
+        cartCount,
+        unseenCartItemCount,
+        markCartAsSeen
       }}
     >
       {children}

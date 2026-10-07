@@ -18,6 +18,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import NewPassword from './pages/NewPassword';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
 import UserProfile from './pages/UserProfile';
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/new-password" element={<NewPassword />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-otp" element={<VerifyOtp />} />
 

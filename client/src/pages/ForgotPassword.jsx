@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle, KeyRound } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../services/api';
 import safeMarketLogo from '../assets/safemarket_logo.png';
 
 export default function ForgotPassword() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -18,9 +19,10 @@ export default function ForgotPassword() {
 
     try {
       const result = await api.post('/auth/forgot-password', { email });
-      setMessage(result.message);
+      const notice = result.codeSent ? '' : '&notice=account-not-verified';
+      navigate(`/reset-password?email=${encodeURIComponent(email.trim())}${notice}`);
     } catch (requestError) {
-      setError(requestError.message || 'Unable to request a password reset. Please try again.');
+      setError(requestError.message || 'Unable to send a password reset code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -32,19 +34,19 @@ export default function ForgotPassword() {
         <div className="text-center mb-8">
           <img src={safeMarketLogo} alt="SafeMarket Logo" className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Forgot your password?</h1>
-          <p className="text-sm text-slate-500 mt-2">Enter the email address on your account and we’ll send you a reset link.</p>
+          <p className="text-sm text-slate-500 mt-2">Enter the email address on your account and we’ll send you a 6-digit password reset code.</p>
         </div>
 
-        {message && (
-          <div role="status" className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-start gap-2.5">
-            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{message}</span>
-          </div>
-        )}
         {error && (
           <div role="alert" className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-start gap-2.5">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
+          </div>
+        )}
+        {message && (
+          <div role="status" className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-start gap-2.5">
+            <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{message}</span>
           </div>
         )}
 
@@ -70,8 +72,7 @@ export default function ForgotPassword() {
             disabled={loading}
             className="w-full py-3 px-4 bg-safegreen-600 hover:bg-safegreen-700 text-white font-bold text-sm rounded-xl shadow-md shadow-safegreen-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <KeyRound className="w-4 h-4" />
-            {loading ? 'Sending...' : 'Send Reset Link'}
+            {loading ? 'Sending...' : 'Reset Password'}
           </button>
         </form>
 
