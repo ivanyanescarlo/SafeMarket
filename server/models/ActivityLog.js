@@ -32,6 +32,10 @@ const activityLogSchema = new mongoose.Schema(
     ip: {
       type: String,
       default: ''
+    },
+    url: {
+      type: String,
+      default: ''
     }
   },
   {

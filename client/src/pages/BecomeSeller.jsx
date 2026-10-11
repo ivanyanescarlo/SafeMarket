@@ -29,6 +29,9 @@ export default function BecomeSeller() {
   });
   const [sellerBio, setSellerBio] = useState(user?.bio || '');
   const [profileImage, setProfileImage] = useState(user?.profileImage || '');
+  const [verificationDocumentType, setVerificationDocumentType] = useState('');
+  const [verificationFrontImage, setVerificationFrontImage] = useState('');
+  const [verificationBackImage, setVerificationBackImage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activatedSuccess, setActivatedSuccess] = useState(false);
@@ -97,15 +100,37 @@ export default function BecomeSeller() {
     guidelines.noScamming;
 
   const handleActivateSellerMode = async () => {
+    if (!agreementChecked) {
+      setError('Accept the SafeMarket Seller Agreement before activating Seller Mode.');
+      setStep(1);
+      return;
+    }
+
+    if (!allGuidelinesChecked) {
+      setError('Check all five SafeMarket Listing Guidelines before activating Seller Mode.');
+      setStep(2);
+      return;
+    }
+
+    if (!verificationDocumentType || !verificationFrontImage || !verificationBackImage) {
+      setError('Choose a verification document type and attach both the front and back images.');
+      setStep(3);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       const res = await api.post('/users/become-seller', {
-        agreementAccepted: true,
-        guidelinesAccepted: true,
+        agreementAccepted: agreementChecked,
+        guidelinesAccepted: allGuidelinesChecked,
+        guidelines,
         bio: sellerBio,
-        profileImage
+        profileImage,
+        verificationDocumentType,
+        verificationFrontImage,
+        verificationBackImage
       });
 
       if (res.success) {
@@ -117,6 +142,38 @@ export default function BecomeSeller() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerificationImage = (side, event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Upload a JPG, PNG, or WebP image.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Verification images must be 2 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        if (side === 'front') {
+          setVerificationFrontImage(reader.result);
+        } else {
+          setVerificationBackImage(reader.result);
+        }
+        setError('');
+      } else {
+        setError('Could not read the selected verification image.');
+      }
+    };
+    reader.onerror = () => setError('Could not read the selected verification image.');
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -348,18 +405,76 @@ export default function BecomeSeller() {
                   Step 3 of 4
                 </span>
                 <h3 className="text-2xl font-bold text-slate-900 mt-2">
-                  Seller Profile Information (Optional)
+                  Seller Profile & Verification
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Add an optional seller bio to help buyers get to know you.
+                  Add an optional seller bio and an image that supports your seller identity.
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-                🔒 <strong>No payment or bank details required:</strong> SafeMarket does NOT require credit cards, bank accounts, or sensitive ID documents for seller mode. Your general location ({user?.location?.cityMunicipality}, {user?.location?.province}) is already sufficient.
+                <strong>Verification images:</strong> Choose a document type and upload clear front and back images (JPG, PNG, or WebP, up to 2 MB each). Do not upload payment or bank details.
               </div>
 
               <div className="space-y-4">
+                <div>
+                  <label htmlFor="verificationDocumentType" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Verification Document
+                  </label>
+                  <select
+                    id="verificationDocumentType"
+                    value={verificationDocumentType}
+                    onChange={(e) => setVerificationDocumentType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                  >
+                    <option value="">Choose document type</option>
+                    <option value="Business ID">Business ID</option>
+                    <option value="Business card">Business card</option>
+                    <option value="Other seller proof">Other seller proof</option>
+                  </select>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="verificationFrontImage" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Front of ID / Document
+                    </label>
+                    <input
+                      id="verificationFrontImage"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handleVerificationImage('front', e)}
+                      className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-safegreen-50 file:px-4 file:py-2 file:font-semibold file:text-safegreen-700"
+                    />
+                    {verificationFrontImage && (
+                      <img
+                        src={verificationFrontImage}
+                        alt="Front of seller verification document"
+                        className="mt-3 max-h-48 rounded-xl border border-slate-200 object-contain"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="verificationBackImage" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Back of ID / Document
+                    </label>
+                    <input
+                      id="verificationBackImage"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handleVerificationImage('back', e)}
+                      className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-safegreen-50 file:px-4 file:py-2 file:font-semibold file:text-safegreen-700"
+                    />
+                    {verificationBackImage && (
+                      <img
+                        src={verificationBackImage}
+                        alt="Back of seller verification document"
+                        className="mt-3 max-h-48 rounded-xl border border-slate-200 object-contain"
+                      />
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Seller Bio (Optional)
@@ -424,6 +539,7 @@ export default function BecomeSeller() {
                 <div className="text-xs text-slate-600 pt-2 border-t border-slate-200">
                   <p><strong>Account:</strong> {user?.firstName} {user?.lastName} (@{user?.username})</p>
                   <p><strong>Trading Region:</strong> {user?.location?.cityMunicipality}, {user?.location?.province}</p>
+                  <p><strong>Verification:</strong> {verificationDocumentType} ({verificationFrontImage ? 'front attached' : 'front required'}, {verificationBackImage ? 'back attached' : 'back required'})</p>
                   {sellerBio && <p className="mt-1 italic">"{sellerBio}"</p>}
                 </div>
               </div>
@@ -439,7 +555,7 @@ export default function BecomeSeller() {
                 </button>
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={loading || !verificationDocumentType || !verificationFrontImage || !verificationBackImage}
                   onClick={handleActivateSellerMode}
                   className="px-6 py-3 bg-safegreen-600 hover:bg-safegreen-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-safegreen-200 transition-all flex items-center gap-2 disabled:opacity-50"
                 >

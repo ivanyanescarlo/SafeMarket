@@ -149,7 +149,7 @@ export default function ProductCatalog() {
               maxLength={50}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by keywords..."
+              placeholder="Search item, brand, model, or location..."
               className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-2xs"
             />
           </div>

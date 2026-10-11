@@ -119,7 +119,8 @@ exports.createRating = async (req, res) => {
       targetType: 'Rating',
       targetId: review._id,
       details: { sellerId, rating, feedback },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(201).json({

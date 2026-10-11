@@ -88,7 +88,11 @@ export default function AdminAiMonitoring({ onAction }) {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Loading AI monitoring data...</div>
+          <div className="space-y-3" aria-hidden="true">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-slate-200 rounded-2xl animate-pulse" />
+            ))}
+          </div>
         ) : flaggedListings.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-400">
             No flagged listings currently match this filter.

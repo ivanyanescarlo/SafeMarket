@@ -123,7 +123,7 @@ exports.getUsers = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
     const total = await User.countDocuments(query);
     const users = await User.find(query)
-      .select('-password')
+      .select('-password -sellerProfile.verificationImage')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -146,14 +146,29 @@ exports.getUsers = async (req, res) => {
 
 /**
  * @route   PUT /api/admin/users/:id/status
- * @desc    Suspend or activate an account / toggle role
+ * @desc    Block or unblock an account
  */
 exports.updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, role, reason } = req.body;
+    const body = req.body || {};
+    const { status, reason } = body;
 
-    const user = await User.findById(id);
+    if (Object.prototype.hasOwnProperty.call(body, 'role')) {
+      return res.status(400).json({
+        success: false,
+        message: 'User roles cannot be changed through account moderation.'
+      });
+    }
+
+    if (!['active', 'suspended'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Choose a valid account status.'
+      });
+    }
+
+    const user = await User.findById(id).select('-password -sellerProfile.verificationImage');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -169,8 +184,7 @@ exports.updateUserStatus = async (req, res) => {
       });
     }
 
-    if (status) user.status = status;
-    if (role) user.role = role;
+    user.status = status;
 
     await user.save();
 
@@ -184,10 +198,10 @@ exports.updateUserStatus = async (req, res) => {
       details: {
         affectedUser: user.username,
         newStatus: status,
-        newRole: role,
         reason: reason || 'Admin moderation'
       },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     // Notify user if status changed
@@ -196,8 +210,8 @@ exports.updateUserStatus = async (req, res) => {
       await Notification.create({
         recipientId: user._id,
         type: isSuspended ? 'violation' : 'system',
-        title: isSuspended ? '⚠️ Account Suspension & Violation Notice' : `Account Status Notice: ${status.toUpperCase()}`,
-        message: `Your account status has been updated to "${status}" by an administrator. Reason: ${reason || 'Administrative safety review.'}`,
+        title: isSuspended ? '⚠️ Account Blocked & Violation Notice' : 'Account Unblocked',
+        message: `Your account has been ${isSuspended ? 'blocked' : 'unblocked'} by an administrator. Reason: ${reason || 'Administrative safety review.'}`,
         link: '/profile'
       });
     }
@@ -212,67 +226,6 @@ exports.updateUserStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update user status.'
-    });
-  }
-};
-
-/**
- * @route   DELETE /api/admin/users/:id
- * @desc    Delete a user account after email confirmation
- */
-exports.deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const confirmationEmail = typeof req.body.confirmationEmail === 'string'
-      ? req.body.confirmationEmail.toLowerCase().trim()
-      : '';
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found.'
-      });
-    }
-
-    if (user._id.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Administrators cannot delete their own account.'
-      });
-    }
-
-    if (confirmationEmail !== user.email.toLowerCase()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Confirmation email does not match this account.'
-      });
-    }
-
-    await logActivity({
-      userId: req.user._id,
-      userEmail: req.user.email,
-      action: 'ADMIN_USER_DELETED',
-      targetType: 'User',
-      targetId: user._id,
-      details: {
-        deletedUsername: user.username,
-        deletedEmail: user.email
-      },
-      ip: req.ip
-    });
-
-    await user.deleteOne();
-
-    return res.status(200).json({
-      success: true,
-      message: `Account ${user.email} was deleted.`
-    });
-  } catch (error) {
-    console.error('deleteUser error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to delete user account.'
     });
   }
 };
@@ -335,7 +288,10 @@ exports.moderateListing = async (req, res) => {
     const { id } = req.params;
     const { status, removalReason } = req.body;
 
-    const listing = await Listing.findById(id).populate('sellerId');
+    const listing = await Listing.findById(id).populate(
+      'sellerId',
+      'firstName lastName username email profileImage'
+    );
     if (!listing) {
       return res.status(404).json({
         success: false,
@@ -343,6 +299,7 @@ exports.moderateListing = async (req, res) => {
       });
     }
 
+    const wasRemoved = listing.status === 'removed';
     if (status) listing.status = status;
     if (removalReason !== undefined) listing.removalReason = removalReason;
 
@@ -359,10 +316,11 @@ exports.moderateListing = async (req, res) => {
         newStatus: status,
         reason: removalReason
       },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
-    if (status === 'removed') {
+    if (status === 'removed' && !wasRemoved) {
       await Notification.create({
         recipientId: listing.sellerId._id,
         type: 'violation',

@@ -4,6 +4,8 @@ const Notification = require('../models/Notification');
 const { analyzeListingWithGemini } = require('../utils/aiRiskAnalyzer');
 const { logActivity } = require('../utils/logger');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
  * @route   POST /api/listings
  * @desc    Create a new product listing (Seller only)
@@ -25,18 +27,26 @@ exports.createListing = async (req, res) => {
       cityMunicipality
     } = req.body;
 
-    if (!title || !description || price === undefined || !category || !condition) {
+    if (
+      !title ||
+      !description ||
+      price === undefined ||
+      !category ||
+      !condition ||
+      typeof itemAge !== 'string' ||
+      !itemAge.trim()
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required product details (title, description, price, category, condition).'
+        message: 'Please provide all required product details, including item age / ownership duration.'
       });
     }
 
     const numPrice = Number(price);
-    if (isNaN(numPrice) || numPrice < 0) {
+    if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > 500000) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid non-negative price.'
+        message: 'Please provide a valid price between ₱0 and ₱500,000.'
       });
     }
 
@@ -76,6 +86,13 @@ exports.createListing = async (req, res) => {
       riskIndicators: aiAnalysis.riskIndicators,
       riskSummary: aiAnalysis.riskSummary,
       recommendation: aiAnalysis.recommendation,
+      productCheck: aiAnalysis.productCheck,
+      priceCheck: aiAnalysis.priceCheck,
+      analysisSourceStatus: aiAnalysis.analysisSourceStatus,
+      analysisSourceMessage: aiAnalysis.analysisSourceMessage,
+      comparisonSources: aiAnalysis.comparisonSources,
+      comparablePrices: aiAnalysis.comparablePrices,
+      analyzedAt: aiAnalysis.analyzedAt,
       status: 'active'
     });
 
@@ -90,7 +107,8 @@ exports.createListing = async (req, res) => {
         price: listing.price,
         riskLevel: listing.riskLevel
       },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     // If listing flagged as High Risk, issue safety warning/violation notice to seller
@@ -141,14 +159,21 @@ exports.getListings = async (req, res) => {
     const query = { status: 'active' };
 
     // Search keyword
-    if (search) {
-      const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [
-        { title: searchRegex },
-        { description: searchRegex },
-        { brand: searchRegex },
-        { model: searchRegex }
-      ];
+    if (typeof search === 'string' && search.trim()) {
+      const searchTerms = search.trim().split(/\s+/).filter(Boolean);
+      query.$and = searchTerms.map((term) => {
+        const searchRegex = new RegExp(escapeRegex(term), 'i');
+        return {
+          $or: [
+            { title: searchRegex },
+            { description: searchRegex },
+            { brand: searchRegex },
+            { model: searchRegex },
+            { 'location.cityMunicipality': searchRegex },
+            { 'location.province': searchRegex }
+          ]
+        };
+      });
     }
 
     // Category filter
@@ -317,6 +342,24 @@ exports.updateListing = async (req, res) => {
       status
     } = req.body;
 
+    if (price !== undefined) {
+      const numPrice = Number(price);
+      if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > 500000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid price between ₱0 and ₱500,000.'
+        });
+      }
+    }
+
+    const nextItemAge = itemAge === undefined ? listing.itemAge : itemAge;
+    if (typeof nextItemAge !== 'string' || !nextItemAge.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select the item age / ownership duration.'
+      });
+    }
+
     let contentChanged = false;
 
     if (title && title !== listing.title) {
@@ -331,20 +374,39 @@ exports.updateListing = async (req, res) => {
       listing.price = Number(price);
       contentChanged = true;
     }
-    if (category) listing.category = category;
-    if (condition) listing.condition = condition;
+    if (category && category !== listing.category) {
+      listing.category = category;
+      contentChanged = true;
+    }
+    if (condition && condition !== listing.condition) {
+      listing.condition = condition;
+      contentChanged = true;
+    }
     if (images) listing.images = images;
-    if (brand !== undefined) listing.brand = brand.trim();
-    if (model !== undefined) listing.model = model.trim();
+    if (brand !== undefined && brand.trim() !== listing.brand) {
+      listing.brand = brand.trim();
+      contentChanged = true;
+    }
+    if (model !== undefined && model.trim() !== listing.model) {
+      listing.model = model.trim();
+      contentChanged = true;
+    }
     if (itemAge !== undefined) listing.itemAge = itemAge.trim();
     if (additionalDetails !== undefined) listing.additionalDetails = additionalDetails.trim();
     if (status) listing.status = status;
 
     if (province && cityMunicipality) {
-      listing.location = {
+      const nextLocation = {
         province: province.trim(),
         cityMunicipality: cityMunicipality.trim()
       };
+      if (
+        nextLocation.province !== listing.location.province ||
+        nextLocation.cityMunicipality !== listing.location.cityMunicipality
+      ) {
+        listing.location = nextLocation;
+        contentChanged = true;
+      }
     }
 
     // If description/title/price changed, re-run Gemini AI risk analysis
@@ -364,6 +426,13 @@ exports.updateListing = async (req, res) => {
       listing.riskIndicators = aiAnalysis.riskIndicators;
       listing.riskSummary = aiAnalysis.riskSummary;
       listing.recommendation = aiAnalysis.recommendation;
+      listing.productCheck = aiAnalysis.productCheck;
+      listing.priceCheck = aiAnalysis.priceCheck;
+      listing.analysisSourceStatus = aiAnalysis.analysisSourceStatus;
+      listing.analysisSourceMessage = aiAnalysis.analysisSourceMessage;
+      listing.comparisonSources = aiAnalysis.comparisonSources;
+      listing.comparablePrices = aiAnalysis.comparablePrices;
+      listing.analyzedAt = aiAnalysis.analyzedAt;
 
       if (listing.riskLevel === 'High') {
         await Notification.create({
@@ -385,7 +454,8 @@ exports.updateListing = async (req, res) => {
       targetType: 'Listing',
       targetId: listing._id,
       details: { title: listing.title, status: listing.status },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -438,7 +508,8 @@ exports.deleteListing = async (req, res) => {
       targetType: 'Listing',
       targetId: listing._id,
       details: { title: listing.title },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -523,7 +594,8 @@ exports.markSoldAndRequestRating = async (req, res) => {
       targetType: 'Listing',
       targetId: listing._id,
       details: { title: listing.title, conversationId },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({

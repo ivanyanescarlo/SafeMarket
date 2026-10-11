@@ -87,8 +87,10 @@ export default function MyListings() {
       {/* Table / List */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-400">
-            Loading your listings...
+          <div className="p-6 space-y-3" aria-hidden="true">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-200 rounded animate-pulse" />
+            ))}
           </div>
         ) : listings.length === 0 ? (
           <div className="p-16 text-center text-slate-400">

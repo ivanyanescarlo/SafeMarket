@@ -20,7 +20,7 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'safemarket_super_secure_jwt_secret_key_2026_ph_security');
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password -sellerProfile.verificationImage');
 
     if (!user) {
       return res.status(401).json({
@@ -66,7 +66,7 @@ const optionalAuth = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'safemarket_super_secure_jwt_secret_key_2026_ph_security');
-      const user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id).select('-password -sellerProfile.verificationImage');
       if (user && (!user.passwordChangedAt || decoded.iat > Math.floor(user.passwordChangedAt.getTime() / 1000))) {
         req.user = user;
       }

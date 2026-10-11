@@ -99,7 +99,7 @@ export default function Home() {
                   maxLength={50}
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  placeholder="Search second-hand phones, laptops, bikes, furniture..."
+                  placeholder="Search item, brand, model, or location..."
                   className="w-full text-sm sm:text-base text-slate-800 placeholder-slate-400 focus:outline-none bg-transparent"
                 />
               </div>

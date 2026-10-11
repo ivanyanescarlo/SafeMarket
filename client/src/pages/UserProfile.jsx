@@ -100,8 +100,9 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-16 text-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-safegreen-600 mx-auto" />
+      <div className="max-w-4xl mx-auto py-12 px-4 space-y-6" aria-hidden="true">
+        <div className="h-40 bg-slate-200 rounded-3xl animate-pulse" />
+        <div className="h-64 bg-slate-200 rounded-3xl animate-pulse" />
       </div>
     );
   }

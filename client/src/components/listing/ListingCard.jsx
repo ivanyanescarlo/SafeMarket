@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Star, ShoppingCart, Check } from 'lucide-react';
+import { MapPin, Star, Bookmark, Check } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -45,7 +45,7 @@ export default function ListingCard({ listing }) {
       to={`/product/${listing._id}`}
       className="group flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-safegreen-400 transition-all duration-200 overflow-hidden relative"
     >
-      {/* Thumbnail with Risk Badge & Quick Add to Cart overlay */}
+      {/* Thumbnail with Risk Badge & Quick Save overlay */}
       <div className="relative aspect-[4/3] w-full bg-slate-100 overflow-hidden">
         <img
           src={imageSrc}
@@ -61,14 +61,14 @@ export default function ListingCard({ listing }) {
           <button
             type="button"
             onClick={handleCartClick}
-            title={inCart ? 'Remove from Cart' : 'Add to Cart'}
+            title={inCart ? 'Remove from Saved Items' : 'Save Item'}
             className={`p-2 rounded-xl transition-all shadow-md flex items-center justify-center ${
               inCart
                 ? 'bg-safegreen-600 text-white hover:bg-safegreen-700'
                 : 'bg-white/90 backdrop-blur-md text-slate-700 hover:bg-white hover:text-safegreen-700 hover:scale-110'
             }`}
           >
-            {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+            {inCart ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
           </button>
         </div>
 

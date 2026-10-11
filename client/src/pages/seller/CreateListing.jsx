@@ -16,6 +16,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LocationSelector from '../../components/common/LocationSelector';
 import RiskWarningBanner from '../../components/listing/RiskWarningBanner';
+import GoogleSearchSources from '../../components/listing/GoogleSearchSources';
 import ImageUploadPreview from '../../components/common/ImageUploadPreview';
 import CustomSelect from '../../components/common/CustomSelect';
 
@@ -41,7 +42,6 @@ const CONDITIONS = [
 ];
 
 const ITEM_AGE_OPTIONS = [
-  '-- Select Item Age (Optional) --',
   'Brand New / Unused',
   'Less than 1 Month (Few Days)',
   '1 to 3 Months',
@@ -143,8 +143,13 @@ export default function CreateListing() {
       return;
     }
 
-    if (Number(formData.price) > 999999) {
-      setError('Maximum price limit is ₱999,999.');
+    if (!formData.itemAge) {
+      setError('Please select the item age / ownership duration before publishing.');
+      return;
+    }
+
+    if (Number(formData.price) > 500000) {
+      setError('Maximum price limit is ₱500,000.');
       return;
     }
 
@@ -238,6 +243,7 @@ export default function CreateListing() {
               <input
                 type="text"
                 inputMode="numeric"
+                maxLength={6}
                 name="price"
                 value={formData.price}
                 onKeyDown={handleDigitsOnlyKeyDown}
@@ -246,6 +252,7 @@ export default function CreateListing() {
                 placeholder="e.g. 8500"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500 font-bold text-slate-800"
               />
+              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱500,000</p>
             </div>
 
             <CustomSelect
@@ -325,20 +332,16 @@ export default function CreateListing() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                Item Age / Ownership Duration
+                Item Age / Ownership Duration <span className="text-rose-500">*</span>
               </label>
               <select
                 name="itemAge"
                 value={formData.itemAge}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFormData((prev) => ({
-                    ...prev,
-                    itemAge: val.startsWith('--') ? '' : val
-                  }));
-                }}
+                onChange={handleChange}
+                required
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-2xs"
               >
+                <option value="" disabled>Select item age / ownership duration</option>
                 {ITEM_AGE_OPTIONS.map((opt) => (
                   <option key={opt} value={opt}>
                     {opt}
@@ -410,7 +413,9 @@ export default function CreateListing() {
                 riskIndicators={aiAnalysis.riskIndicators}
                 riskSummary={aiAnalysis.riskSummary}
                 recommendation={aiAnalysis.recommendation}
+                analysisSourceStatus={aiAnalysis.analysisSourceStatus}
               />
+              <GoogleSearchSources analysis={aiAnalysis} listing={formData} />
             </div>
           )}
         </div>

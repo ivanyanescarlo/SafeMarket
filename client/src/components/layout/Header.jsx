@@ -14,7 +14,7 @@ import {
   ChevronDown,
   Check,
   AlertTriangle,
-  ShoppingCart,
+  Bookmark,
   Sun,
   Moon
 } from 'lucide-react';
@@ -104,7 +104,7 @@ export default function Header() {
                   maxLength={50}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search second-hand phones, laptops, bikes, furniture..."
+                  placeholder="Search item, brand, model, or location..."
                   className="w-full pl-10 pr-20 py-2 bg-slate-100/80 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-safegreen-500 focus:border-safegreen-500 transition-all"
                 />
                 <button
@@ -141,7 +141,7 @@ export default function Header() {
                   className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-safegreen-50 hover:bg-safegreen-100 text-safegreen-700 border border-safegreen-200 rounded-lg text-xs font-bold transition-colors"
                 >
                   <PlusCircle className="w-4 h-4" />
-                  <span>Sell Item</span>
+                  <span>Post Item</span>
                 </Link>
               ) : (
                 <Link
@@ -158,10 +158,10 @@ export default function Header() {
             {!isAdmin && (
               <Link
                 to="/cart"
-                title="Saved Cart"
+                title="Saved Items"
                 className="relative p-2 text-slate-600 hover:text-safegreen-600 hover:bg-slate-100 rounded-full transition-colors"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <Bookmark className="w-5 h-5" />
                 {user && unseenCartItemCount > 0 && (
                   <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-slate-950 bg-amber-400 rounded-full border-2 border-white shadow-xs">
                     {unseenCartItemCount > 9 ? '9+' : unseenCartItemCount}

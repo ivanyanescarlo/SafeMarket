@@ -4,7 +4,6 @@ const {
   getStats,
   getUsers,
   updateUserStatus,
-  deleteUser,
   getListings,
   moderateListing,
   getAiMonitoring,
@@ -18,7 +17,6 @@ router.use(protect, requireAdmin);
 router.get('/stats', getStats);
 router.get('/users', getUsers);
 router.put('/users/:id/status', updateUserStatus);
-router.delete('/users/:id', deleteUser);
 router.get('/listings', getListings);
 router.put('/listings/:id/moderate', moderateListing);
 router.get('/ai-monitoring', getAiMonitoring);

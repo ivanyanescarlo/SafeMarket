@@ -11,7 +11,7 @@ const { logActivity } = require('../utils/logger');
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select(
-      'firstName lastName username role sellerProfile profileImage bio averageRating ratingCount location createdAt status'
+      'firstName lastName username role sellerProfile.isSeller sellerProfile.bio sellerProfile.profileImage sellerProfile.agreementAccepted sellerProfile.guidelinesAccepted sellerProfile.activatedAt profileImage bio averageRating ratingCount location createdAt status'
     );
 
     if (!user) {
@@ -92,7 +92,8 @@ exports.updateProfile = async (req, res) => {
       targetType: 'User',
       targetId: user._id,
       details: { firstName: user.firstName, lastName: user.lastName },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -115,19 +116,68 @@ exports.updateProfile = async (req, res) => {
  */
 exports.becomeSeller = async (req, res) => {
   try {
-    const { agreementAccepted, guidelinesAccepted, bio, profileImage } = req.body;
+    const {
+      agreementAccepted,
+      guidelinesAccepted,
+      guidelines,
+      bio,
+      profileImage,
+      verificationDocumentType,
+      verificationFrontImage,
+      verificationBackImage
+    } = req.body;
 
-    if (!agreementAccepted) {
+    if (agreementAccepted !== true) {
       return res.status(400).json({
         success: false,
         message: 'You must accept the SafeMarket Seller Agreement to proceed.'
       });
     }
 
-    if (!guidelinesAccepted) {
+    const requiredGuidelines = ['secondHand', 'accurateDesc', 'reasonablePrice', 'noProhibited', 'noScamming'];
+    const allGuidelinesAccepted = requiredGuidelines.every((key) => guidelines?.[key] === true);
+    if (guidelinesAccepted !== true && !allGuidelinesAccepted) {
       return res.status(400).json({
         success: false,
-        message: 'You must agree to all SafeMarket Listing Guidelines to proceed.'
+        message: 'Check all five SafeMarket Listing Guidelines before activating Seller Mode.'
+      });
+    }
+
+    const allowedDocumentTypes = [
+      'Business ID',
+      'Business card',
+      'Other seller proof'
+    ];
+    if (!allowedDocumentTypes.includes(verificationDocumentType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Choose a valid seller verification document type.'
+      });
+    }
+
+    const hasValidVerificationImage = (image) => {
+      if (typeof image !== 'string') return false;
+      const match = image.match(/^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/);
+      if (!match) return false;
+
+      const encodedImage = match[1];
+      const base64Padding = encodedImage.endsWith('==') ? 2 : encodedImage.endsWith('=') ? 1 : 0;
+      const imageSizeBytes = Math.floor(encodedImage.length * 0.75) - base64Padding;
+      return (
+        encodedImage.length <= 2800000 &&
+        imageSizeBytes <= 2 * 1024 * 1024 &&
+        encodedImage.length % 4 === 0 &&
+        Buffer.from(encodedImage, 'base64').toString('base64') === encodedImage
+      );
+    };
+
+    if (
+      !hasValidVerificationImage(verificationFrontImage) ||
+      !hasValidVerificationImage(verificationBackImage)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Attach valid front and back JPG, PNG, or WebP images up to 2 MB each.'
       });
     }
 
@@ -162,6 +212,9 @@ exports.becomeSeller = async (req, res) => {
       profileImage: (profileImage || user.profileImage || '').trim(),
       agreementAccepted: true,
       guidelinesAccepted: true,
+      verificationDocumentType,
+      verificationFrontImage,
+      verificationBackImage,
       activatedAt: new Date()
     };
 
@@ -186,14 +239,27 @@ exports.becomeSeller = async (req, res) => {
       action: 'SELLER_MODE_ACTIVATED',
       targetType: 'User',
       targetId: user._id,
-      details: { agreementAccepted: true, guidelinesAccepted: true },
-      ip: req.ip
+      details: {
+        agreementAccepted: true,
+        guidelinesAccepted: true,
+        verificationDocumentType
+      },
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
+
+    const responseUser = user.toObject();
+    delete responseUser.password;
+    if (responseUser.sellerProfile) {
+      delete responseUser.sellerProfile.verificationImage;
+      delete responseUser.sellerProfile.verificationFrontImage;
+      delete responseUser.sellerProfile.verificationBackImage;
+    }
 
     res.status(200).json({
       success: true,
       message: 'Congratulations! Seller Mode has been activated successfully.',
-      user
+      user: responseUser
     });
   } catch (error) {
     console.error('becomeSeller error:', error);

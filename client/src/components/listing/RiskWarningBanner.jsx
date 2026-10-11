@@ -5,9 +5,11 @@ export default function RiskWarningBanner({
   riskLevel = 'Low',
   riskIndicators = [],
   riskSummary = '',
-  recommendation = ''
+  recommendation = '',
+  analysisSourceStatus = 'grounded'
 }) {
   const norm = (riskLevel || 'Low').toLowerCase();
+  const priceNotVerified = analysisSourceStatus !== 'grounded';
 
   if (norm === 'high') {
     return (
@@ -22,7 +24,7 @@ export default function RiskWarningBanner({
                 AI Warning
               </span>
               <h4 className="text-base font-bold text-rose-900">
-                High Risk Listing Detected
+                High Scam Risk
               </h4>
             </div>
             <p className="text-sm text-rose-800 mt-1 font-medium">
@@ -70,7 +72,7 @@ export default function RiskWarningBanner({
                 AI Notice
               </span>
               <h4 className="text-sm font-bold text-amber-900">
-                Medium Risk Notice – Exercise Caution
+                Medium Scam Risk – Exercise Caution
               </h4>
             </div>
             <p className="text-xs text-amber-800 mt-1">
@@ -109,15 +111,20 @@ export default function RiskWarningBanner({
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-600 text-white">
-              AI Verified
+              {priceNotVerified ? 'Basic Text Check' : 'AI Scam Check'}
             </span>
             <h4 className="text-sm font-bold text-emerald-900">
-              Low Scam Risk – Standard Community Listing
+              Low Scam Risk – No Scam Indicators Found
             </h4>
           </div>
           <p className="text-xs text-emerald-800 mt-1">
-            {riskSummary || 'Gemini AI Listing Risk Analyzer found standard second-hand pricing with no suspicious advance payment triggers.'}
+            {riskSummary || 'No common scam-related warning signs were detected.'}
           </p>
+          {priceNotVerified && (
+            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs font-semibold text-amber-900">
+              This is only a basic scam-text check. Product identity and price were not verified, so a low scam-risk result does not mean the price is fair.
+            </p>
+          )}
           <p className="mt-1.5 text-xs text-emerald-700 italic">
             {recommendation || 'Standard precaution: Meet in a well-lit public place and test the item before finalizing payment.'}
           </p>

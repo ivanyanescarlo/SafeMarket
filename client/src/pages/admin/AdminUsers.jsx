@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldAlert, CheckCircle, Ban, UserCheck, Shield, Trash2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import api from '../../services/api';
 
 export default function AdminUsers({ onAction }) {
@@ -41,7 +41,7 @@ export default function AdminUsers({ onAction }) {
   const handleToggleStatus = async (user) => {
     const newStatus = user.status === 'active' ? 'suspended' : 'active';
     const reason = prompt(
-      `Please provide a reason for changing ${user.username}'s status to ${newStatus}:`,
+      `Please provide a reason to ${newStatus === 'suspended' ? 'block' : 'unblock'} @${user.username}:`,
       newStatus === 'suspended' ? 'Policy violation / suspicious activity' : 'Account restored after review'
     );
     if (reason === null) return;
@@ -56,49 +56,6 @@ export default function AdminUsers({ onAction }) {
       if (onAction) onAction();
     } catch (err) {
       alert(err.message || 'Failed to update user status.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleChangeRole = async (user, newRole) => {
-    if (!confirm(`Change role of @${user.username} to ${newRole.toUpperCase()}?`)) return;
-
-    setActionLoading(user._id);
-    try {
-      await api.put(`/admin/users/${user._id}/status`, {
-        role: newRole,
-        reason: `Admin promoted/demoted role to ${newRole}`
-      });
-      fetchUsers();
-      if (onAction) onAction();
-    } catch (err) {
-      alert(err.message || 'Failed to change role.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDeleteUser = async (user) => {
-    const confirmationEmail = prompt(
-      `Permanently delete @${user.username}? Enter the account email to confirm:`,
-      ''
-    );
-    if (confirmationEmail === null) return;
-    if (confirmationEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
-      alert('The email does not match this account. No changes were made.');
-      return;
-    }
-
-    setActionLoading(user._id);
-    try {
-      await api.delete(`/admin/users/${user._id}`, {
-        body: JSON.stringify({ confirmationEmail })
-      });
-      setUsers((currentUsers) => currentUsers.filter((item) => item._id !== user._id));
-      if (onAction) onAction();
-    } catch (err) {
-      alert(err.message || 'Failed to delete user account.');
     } finally {
       setActionLoading(null);
     }
@@ -149,7 +106,7 @@ export default function AdminUsers({ onAction }) {
           >
             <option value="All">All Status</option>
             <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
+            <option value="suspended">Blocked</option>
           </select>
         </div>
       </div>
@@ -157,7 +114,11 @@ export default function AdminUsers({ onAction }) {
       {/* Users Table */}
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Loading users list...</div>
+          <div className="p-6 space-y-3" aria-hidden="true">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-10 bg-slate-200 rounded animate-pulse" />
+            ))}
+          </div>
         ) : users.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-400">No users match your criteria.</div>
         ) : (
@@ -203,16 +164,11 @@ export default function AdminUsers({ onAction }) {
                   </td>
 
                   <td className="py-3 px-4">
-                    <select
-                      value={u.role}
-                      disabled={actionLoading === u._id}
-                      onChange={(e) => handleChangeRole(u, e.target.value)}
-                      className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                    <span
+                      className="inline-block px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
                     >
-                      <option value="buyer">Buyer</option>
-                      <option value="seller">Seller</option>
-                      <option value="admin">Administrator</option>
-                    </select>
+                      {u.role === 'admin' ? 'Administrator' : u.role === 'seller' ? 'Seller' : 'Buyer'}
+                    </span>
                   </td>
 
                   <td className="py-3 px-4">
@@ -223,7 +179,7 @@ export default function AdminUsers({ onAction }) {
                           : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}
                     >
-                      {u.status}
+                      {u.status === 'suspended' ? 'Blocked' : 'Active'}
                     </span>
                   </td>
 
@@ -243,17 +199,7 @@ export default function AdminUsers({ onAction }) {
                             : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                         }`}
                       >
-                        {u.status === 'active' ? 'Suspend' : 'Activate'}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={actionLoading === u._id}
-                        onClick={() => handleDeleteUser(u)}
-                        aria-label={`Delete ${u.email}`}
-                        title="Permanently delete account"
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                        {u.status === 'active' ? 'Block' : 'Unblock'}
                       </button>
                     </div>
                   </td>

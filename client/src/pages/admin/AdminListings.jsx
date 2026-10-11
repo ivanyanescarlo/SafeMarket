@@ -118,7 +118,11 @@ export default function AdminListings({ onAction }) {
 
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Loading listings...</div>
+          <div className="p-6 space-y-3" aria-hidden="true">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-12 bg-slate-200 rounded animate-pulse" />
+            ))}
+          </div>
         ) : listings.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-400">No listings found matching criteria.</div>
         ) : (

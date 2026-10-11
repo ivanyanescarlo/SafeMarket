@@ -21,7 +21,8 @@ const listingSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: [true, 'Price is required'],
-      min: [0, 'Price must be positive']
+      min: [0, 'Price must be positive'],
+      max: [500000, 'Price cannot exceed ₱500,000']
     },
     category: {
       type: String,
@@ -101,6 +102,115 @@ const listingSchema = new mongoose.Schema(
     recommendation: {
       type: String,
       default: ''
+    },
+    productCheck: {
+      titleStatus: {
+        type: String,
+        enum: ['match', 'mismatch', 'uncertain'],
+        default: 'uncertain'
+      },
+      brandStatus: {
+        type: String,
+        enum: ['match', 'mismatch', 'uncertain', 'not_provided'],
+        default: 'not_provided'
+      },
+      modelStatus: {
+        type: String,
+        enum: ['match', 'mismatch', 'uncertain', 'not_provided'],
+        default: 'not_provided'
+      },
+      summary: {
+        type: String,
+        default: ''
+      }
+    },
+    priceCheck: {
+      status: {
+        type: String,
+        enum: ['below_market', 'within_market', 'above_market', 'unable_to_assess'],
+        default: 'unable_to_assess'
+      },
+      riskLevel: {
+        type: String,
+        enum: ['Low', 'Medium', 'High', 'Unverified'],
+        default: 'Unverified'
+      },
+      lowPhp: {
+        type: Number,
+        default: null
+      },
+      highPhp: {
+        type: Number,
+        default: null
+      },
+      summary: {
+        type: String,
+        default: ''
+      }
+    },
+    analysisSourceStatus: {
+      type: String,
+      enum: ['grounded', 'unavailable'],
+      default: 'unavailable'
+    },
+    analysisSourceMessage: {
+      type: String,
+      default: ''
+    },
+    comparisonSources: {
+      type: [{
+        title: {
+          type: String,
+          required: true
+        },
+        url: {
+          type: String,
+          required: true
+        },
+        pricePhp: {
+          type: Number,
+          default: null
+        },
+        productTitle: {
+          type: String,
+          default: ''
+        },
+        condition: {
+          type: String,
+          default: ''
+        }
+      }],
+      default: []
+    },
+    comparablePrices: {
+      type: [{
+        title: {
+          type: String,
+          required: true
+        },
+        url: {
+          type: String,
+          required: true
+        },
+        pricePhp: {
+          type: Number,
+          required: true,
+          min: 0
+        },
+        productTitle: {
+          type: String,
+          default: ''
+        },
+        condition: {
+          type: String,
+          default: ''
+        }
+      }],
+      default: []
+    },
+    analyzedAt: {
+      type: Date,
+      default: null
     },
     status: {
       type: String,

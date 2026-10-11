@@ -55,7 +55,8 @@ exports.createReport = async (req, res) => {
         reason,
         description
       },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(201).json({
@@ -169,7 +170,8 @@ exports.updateReportStatus = async (req, res) => {
       targetType: 'Report',
       targetId: report._id,
       details: { status: report.status, adminNotes, deactivatedListing: !!deactivateListing },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({

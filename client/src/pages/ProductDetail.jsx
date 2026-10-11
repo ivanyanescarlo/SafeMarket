@@ -14,13 +14,14 @@ import {
   Sparkles,
   ArrowLeft,
   UserCheck,
-  ShoppingCart,
+  Bookmark,
   Check
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import RiskWarningBanner from '../components/listing/RiskWarningBanner';
+import GoogleSearchSources from '../components/listing/GoogleSearchSources';
 import ReportModal from '../components/common/ReportModal';
 import ListingCard from '../components/listing/ListingCard';
 
@@ -148,9 +149,13 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-16 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-safegreen-600 mx-auto mb-4" />
-        <p className="text-slate-500 text-sm">Scanning & loading listing details...</p>
+      <div className="max-w-6xl mx-auto px-4 py-12 grid gap-8 md:grid-cols-2" aria-hidden="true">
+        <div className="h-96 bg-slate-200 rounded-2xl animate-pulse" />
+        <div className="space-y-4">
+          <div className="h-8 w-3/4 bg-slate-200 rounded animate-pulse" />
+          <div className="h-6 w-1/3 bg-slate-200 rounded animate-pulse" />
+          <div className="h-32 bg-slate-200 rounded animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -378,7 +383,9 @@ export default function ProductDetail() {
                 riskIndicators={listing.riskIndicators}
                 riskSummary={listing.riskSummary}
                 recommendation={listing.recommendation}
+                analysisSourceStatus={listing.analysisSourceStatus}
               />
+              <GoogleSearchSources analysis={listing} listing={listing} />
             </div>
 
             {/* Action Buttons */}
@@ -470,8 +477,8 @@ export default function ProductDetail() {
                       onClick={handleToggleCart}
                       className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
                     >
-                      <ShoppingCart className="w-4 h-4" />
-                      <span>Add to Cart / Save Item</span>
+                      <Bookmark className="w-4 h-4" />
+                      <span>Save Item</span>
                     </button>
                   )}
 

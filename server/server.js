@@ -17,6 +17,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Connect Database
 connectDB();

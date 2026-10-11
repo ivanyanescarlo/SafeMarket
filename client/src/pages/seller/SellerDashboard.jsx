@@ -385,7 +385,11 @@ export default function SellerDashboard() {
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-xs text-slate-400">Loading listings...</div>
+            <div className="space-y-3" aria-hidden="true">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-16 bg-slate-200 rounded-2xl animate-pulse" />
+              ))}
+            </div>
           ) : myListings.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs">
               You haven't posted any second-hand listings yet.

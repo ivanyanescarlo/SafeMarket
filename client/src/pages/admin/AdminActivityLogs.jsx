@@ -48,6 +48,8 @@ export default function AdminActivityLogs() {
 
     const action = (log.action || '').toLowerCase();
     const targetType = (log.targetType || '').toLowerCase();
+    const ip = (log.ip || '').toLowerCase();
+    const url = (log.url || '').toLowerCase();
     const details = (
       typeof log.details === 'object'
         ? JSON.stringify(log.details)
@@ -58,6 +60,8 @@ export default function AdminActivityLogs() {
       userStr.toLowerCase().includes(query) ||
       action.includes(query) ||
       targetType.includes(query) ||
+      ip.includes(query) ||
+      url.includes(query) ||
       details.includes(query)
     );
   });
@@ -96,7 +100,7 @@ export default function AdminActivityLogs() {
               maxLength={50}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search action, user, details..."
+              placeholder="Search action, user, IP, URL..."
               className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-safegreen-500"
             />
           </div>
@@ -120,7 +124,11 @@ export default function AdminActivityLogs() {
       {/* Audit Logs Table */}
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Loading activity logs...</div>
+          <div className="p-6 space-y-3" aria-hidden="true">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-10 bg-slate-200 rounded animate-pulse" />
+            ))}
+          </div>
         ) : filteredLogs.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-400">No activity logs match your search.</div>
         ) : (
@@ -131,6 +139,8 @@ export default function AdminActivityLogs() {
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">User</th>
                 <th className="py-3 px-4">Target Type</th>
+                <th className="py-3 px-4">IP Address</th>
+                <th className="py-3 px-4">URL</th>
                 <th className="py-3 px-4">Details</th>
               </tr>
             </thead>
@@ -163,6 +173,14 @@ export default function AdminActivityLogs() {
                   {/* 4. Target Type */}
                   <td className="py-3 px-4 font-semibold text-slate-700">
                     {log.targetType}
+                  </td>
+
+                  <td className="py-3 px-4 text-slate-600 whitespace-nowrap font-mono">
+                    {log.ip || '—'}
+                  </td>
+
+                  <td className="py-3 px-4 text-slate-600 max-w-xs truncate font-mono" title={log.url || ''}>
+                    {log.url || '—'}
                   </td>
 
                   {/* 5. Details */}

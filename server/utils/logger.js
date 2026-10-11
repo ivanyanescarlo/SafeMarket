@@ -1,6 +1,6 @@
 const ActivityLog = require('../models/ActivityLog');
 
-async function logActivity({ userId = null, userEmail = '', action, targetType = 'System', targetId = '', details = {}, ip = '' }) {
+async function logActivity({ userId = null, userEmail = '', action, targetType = 'System', targetId = '', details = {}, ip = '', url = '' }) {
   try {
     await ActivityLog.create({
       userId,
@@ -9,7 +9,8 @@ async function logActivity({ userId = null, userEmail = '', action, targetType =
       targetType,
       targetId: String(targetId || ''),
       details,
-      ip
+      ip,
+      url
     });
   } catch (err) {
     console.error(`[ActivityLog Error] Failed to log activity: ${err.message}`);

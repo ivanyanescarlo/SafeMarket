@@ -206,8 +206,10 @@ export default function Messages() {
 
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loadingConvs ? (
-              <div className="p-6 text-center text-xs text-slate-400">
-                Loading conversations...
+              <div className="p-4 space-y-4" aria-hidden="true">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-12 bg-slate-200 rounded-xl animate-pulse" />
+                ))}
               </div>
             ) : conversations.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
@@ -384,8 +386,10 @@ export default function Messages() {
               {/* Message History */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40">
                 {loadingMsgs ? (
-                  <div className="text-center text-xs text-slate-400 py-6">
-                    Loading messages...
+                  <div className="space-y-3" aria-hidden="true">
+                    <div className="h-12 w-2/3 bg-slate-200 rounded-xl animate-pulse" />
+                    <div className="h-12 w-2/3 ml-auto bg-slate-200 rounded-xl animate-pulse" />
+                    <div className="h-12 w-1/2 bg-slate-200 rounded-xl animate-pulse" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="text-center text-xs text-slate-400 py-12">

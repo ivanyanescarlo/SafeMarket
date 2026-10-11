@@ -109,7 +109,8 @@ exports.register = async (req, res) => {
       targetType: 'User',
       targetId: user._id,
       details: { username: user.username, city: cityMunicipality, province },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(201).json({
@@ -207,7 +208,8 @@ exports.verifyOtp = async (req, res) => {
       targetType: 'User',
       targetId: user._id,
       details: { message: 'Account successfully activated' },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -278,7 +280,8 @@ exports.resendOtp = async (req, res) => {
       targetType: 'User',
       targetId: user._id,
       details: { channel: channel || 'both' },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -540,7 +543,8 @@ exports.login = async (req, res) => {
         action: 'LOGIN_FAILED_NOT_FOUND',
         targetType: 'Auth',
         details: { loginId: cleanLoginId },
-        ip: req.ip
+        ip: req.ip,
+        url: req.baseUrl + req.path
       });
       return res.status(401).json({
         success: false,
@@ -558,7 +562,8 @@ exports.login = async (req, res) => {
         targetType: 'Auth',
         targetId: user._id,
         details: { username: user.username },
-        ip: req.ip
+        ip: req.ip,
+        url: req.baseUrl + req.path
       });
       return res.status(401).json({
         success: false,
@@ -602,7 +607,8 @@ exports.login = async (req, res) => {
       targetType: 'Auth',
       targetId: user._id,
       details: { role: user.role },
-      ip: req.ip
+      ip: req.ip,
+      url: req.baseUrl + req.path
     });
 
     res.status(200).json({
@@ -618,7 +624,14 @@ exports.login = async (req, res) => {
         mobileNumber: user.mobileNumber,
         location: user.location,
         role: user.role,
-        sellerProfile: user.sellerProfile,
+        sellerProfile: user.sellerProfile ? {
+          isSeller: user.sellerProfile.isSeller,
+          bio: user.sellerProfile.bio,
+          profileImage: user.sellerProfile.profileImage,
+          agreementAccepted: user.sellerProfile.agreementAccepted,
+          guidelinesAccepted: user.sellerProfile.guidelinesAccepted,
+          activatedAt: user.sellerProfile.activatedAt
+        } : undefined,
         profileImage: user.profileImage,
         bio: user.bio,
         averageRating: user.averageRating,
@@ -641,7 +654,7 @@ exports.login = async (req, res) => {
  */
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select('-password -sellerProfile.verificationImage');
     res.status(200).json({
       success: true,
       user

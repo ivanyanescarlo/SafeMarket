@@ -12,6 +12,7 @@ import {
 import api from '../../services/api';
 import LocationSelector from '../../components/common/LocationSelector';
 import RiskWarningBanner from '../../components/listing/RiskWarningBanner';
+import GoogleSearchSources from '../../components/listing/GoogleSearchSources';
 import ImageUploadPreview from '../../components/common/ImageUploadPreview';
 import CustomSelect from '../../components/common/CustomSelect';
 
@@ -37,7 +38,6 @@ const CONDITIONS = [
 ];
 
 const ITEM_AGE_OPTIONS = [
-  '-- Select Item Age (Optional) --',
   'Brand New / Unused',
   'Less than 1 Month (Few Days)',
   '1 to 3 Months',
@@ -175,8 +175,14 @@ export default function EditListing() {
     setSaving(true);
     setError('');
 
-    if (Number(formData.price) > 999999) {
-      setError('Maximum price limit is ₱999,999.');
+    if (!formData.itemAge) {
+      setError('Please select the item age / ownership duration.');
+      setSaving(false);
+      return;
+    }
+
+    if (Number(formData.price) > 500000) {
+      setError('Maximum price limit is ₱500,000.');
       setSaving(false);
       return;
     }
@@ -202,9 +208,10 @@ export default function EditListing() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-16 text-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-safegreen-600 mx-auto" />
-        <p className="text-xs text-slate-500 mt-3">Loading product details...</p>
+      <div className="max-w-4xl mx-auto py-12 px-4 space-y-5" aria-hidden="true">
+        <div className="h-8 w-1/2 bg-slate-200 rounded animate-pulse" />
+        <div className="h-24 bg-slate-200 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-slate-200 rounded-2xl animate-pulse" />
       </div>
     );
   }
@@ -266,6 +273,7 @@ export default function EditListing() {
               <input
                 type="text"
                 inputMode="numeric"
+                maxLength={6}
                 name="price"
                 value={formData.price}
                 onKeyDown={handleDigitsOnlyKeyDown}
@@ -274,6 +282,7 @@ export default function EditListing() {
                 placeholder="₱ 25,000"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
               />
+              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱500,000</p>
             </div>
 
             <CustomSelect
@@ -348,21 +357,17 @@ export default function EditListing() {
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Item Age / Ownership Duration
+                  Item Age / Ownership Duration <span className="text-rose-500">*</span>
                 </label>
                 
                 <select
                   name="itemAge"
                   value={formData.itemAge}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      itemAge: val.startsWith('--') ? '' : val
-                    }));
-                  }}
+                  onChange={handleChange}
+                  required
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
                 >
+                  <option value="" disabled>Select item age / ownership duration</option>
                   {ITEM_AGE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -448,7 +453,9 @@ export default function EditListing() {
                 riskIndicators={aiAnalysis.riskIndicators}
                 riskSummary={aiAnalysis.riskSummary}
                 recommendation={aiAnalysis.recommendation}
+                analysisSourceStatus={aiAnalysis.analysisSourceStatus}
               />
+              <GoogleSearchSources analysis={aiAnalysis} listing={formData} />
             </div>
           )}
         </div>

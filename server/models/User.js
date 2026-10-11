@@ -129,6 +129,29 @@ const userSchema = new mongoose.Schema(
         type: Boolean,
         default: false
       },
+      verificationDocumentType: {
+        type: String,
+        enum: ['', 'Government-issued ID', 'Business ID', 'Business card', 'Business permit', 'Other seller proof'],
+        default: ''
+      },
+      verificationImage: {
+        type: String,
+        default: '',
+        maxlength: 3000000,
+        select: false
+      },
+      verificationFrontImage: {
+        type: String,
+        default: '',
+        maxlength: 3000000,
+        select: false
+      },
+      verificationBackImage: {
+        type: String,
+        default: '',
+        maxlength: 3000000,
+        select: false
+      },
       activatedAt: {
         type: Date,
         default: null
