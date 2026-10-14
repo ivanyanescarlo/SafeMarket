@@ -11,6 +11,11 @@ export default function AdminUsers({ onAction }) {
   const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [suspendUser, setSuspendUser] = useState(null);
+  const [suspensionDuration, setSuspensionDuration] = useState('7');
+  const [suspensionUnit, setSuspensionUnit] = useState('day');
+  const [suspensionReason, setSuspensionReason] = useState('Policy violation / suspicious activity');
+  const [suspensionError, setSuspensionError] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -43,33 +48,40 @@ export default function AdminUsers({ onAction }) {
     fetchUsers();
   };
 
-  const handleSuspendUser = async (user) => {
-    const daysInput = prompt(`How many days should @${user.username} be suspended?`, '7');
-    if (daysInput === null) return;
+  const handleSuspendUser = (user) => {
+    setSuspendUser(user);
+    setSuspensionDuration('7');
+    setSuspensionUnit('day');
+    setSuspensionReason('Policy violation / suspicious activity');
+    setSuspensionError('');
+  };
 
-    const days = Number(daysInput);
-    if (!Number.isFinite(days) || days <= 0) {
-      alert('Please enter a valid number of days greater than zero.');
+  const submitSuspension = async (event) => {
+    event.preventDefault();
+    const duration = Number(suspensionDuration);
+    if (!Number.isInteger(duration) || duration <= 0) {
+      setSuspensionError('Enter a whole number greater than zero.');
       return;
     }
 
-    const reason = prompt(
-      `Please provide a reason for suspending @${user.username}:`,
-      'Policy violation / suspicious activity'
-    );
-    if (reason === null) return;
+    if (!suspensionReason.trim()) {
+      setSuspensionError('Enter a reason for the suspension.');
+      return;
+    }
 
-    setActionLoading(user._id);
+    setActionLoading(suspendUser._id);
     try {
-      await api.put(`/admin/users/${user._id}/status`, {
+      await api.put(`/admin/users/${suspendUser._id}/status`, {
         status: 'suspended',
-        days,
-        reason
+        duration,
+        durationUnit: suspensionUnit,
+        reason: suspensionReason.trim()
       });
+      setSuspendUser(null);
       fetchUsers();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to suspend user.');
+      setSuspensionError(err.message || 'Failed to suspend user.');
     } finally {
       setActionLoading(null);
     }
@@ -305,6 +317,88 @@ export default function AdminUsers({ onAction }) {
           </table>
         )}
       </div>
+
+      {suspendUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" role="presentation">
+          <form
+            onSubmit={submitSuspension}
+            className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="suspension-dialog-title"
+          >
+            <div>
+              <h3 id="suspension-dialog-title" className="text-base font-bold text-slate-900">
+                Suspend @{suspendUser.username}
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">Choose how long the account should be suspended.</p>
+            </div>
+
+            <div>
+              <label htmlFor="suspension-duration" className="mb-1.5 block text-xs font-semibold text-slate-700">
+                Duration
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="suspension-duration"
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={suspensionDuration}
+                  onChange={(event) => setSuspensionDuration(event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                />
+                <select
+                  aria-label="Suspension duration unit"
+                  value={suspensionUnit}
+                  onChange={(event) => setSuspensionUnit(event.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                >
+                  <option value="day">Day(s)</option>
+                  <option value="month">Month(s)</option>
+                  <option value="year">Year(s)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="suspension-reason" className="mb-1.5 block text-xs font-semibold text-slate-700">
+                Reason
+              </label>
+              <textarea
+                id="suspension-reason"
+                rows={3}
+                maxLength={500}
+                required
+                value={suspensionReason}
+                onChange={(event) => setSuspensionReason(event.target.value)}
+                className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+              />
+            </div>
+
+            {suspensionError && <p role="alert" className="text-xs font-medium text-rose-700">{suspensionError}</p>}
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                disabled={actionLoading === suspendUser._id}
+                onClick={() => setSuspendUser(null)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading === suspendUser._id}
+                className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {actionLoading === suspendUser._id ? 'Suspending...' : 'Confirm Suspension'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
     </div>
   );

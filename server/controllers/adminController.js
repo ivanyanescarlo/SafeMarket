@@ -244,14 +244,46 @@ exports.updateUserStatus = async (req, res) => {
     }
 
     user.status = status;
+    let suspensionDuration = null;
+    let suspensionUnit = null;
 
     if (status === 'suspended') {
-      const suspendDays = Number(days || 7);
-      if (Number.isFinite(suspendDays) && suspendDays > 0) {
-        user.suspendedUntil = new Date(Date.now() + suspendDays * 24 * 60 * 60 * 1000);
-      } else {
-        user.suspendedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      suspensionDuration = Number(body.duration ?? days ?? 7);
+      suspensionUnit = body.durationUnit || 'day';
+
+      if (!Number.isInteger(suspensionDuration) || suspensionDuration <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Suspension duration must be a whole number greater than zero.'
+        });
       }
+
+      if (!['day', 'month', 'year'].includes(suspensionUnit)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Choose a valid suspension duration unit.'
+        });
+      }
+
+      const suspendedUntil = new Date();
+      if (suspensionUnit === 'day') {
+        suspendedUntil.setDate(suspendedUntil.getDate() + suspensionDuration);
+      } else {
+        const originalDay = suspendedUntil.getDate();
+        suspendedUntil.setDate(1);
+        if (suspensionUnit === 'month') {
+          suspendedUntil.setMonth(suspendedUntil.getMonth() + suspensionDuration);
+        } else {
+          suspendedUntil.setFullYear(suspendedUntil.getFullYear() + suspensionDuration);
+        }
+        const lastDayOfMonth = new Date(
+          suspendedUntil.getFullYear(),
+          suspendedUntil.getMonth() + 1,
+          0
+        ).getDate();
+        suspendedUntil.setDate(Math.min(originalDay, lastDayOfMonth));
+      }
+      user.suspendedUntil = suspendedUntil;
     } else {
       user.suspendedUntil = null;
     }
@@ -268,7 +300,8 @@ exports.updateUserStatus = async (req, res) => {
       details: {
         affectedUser: user.username,
         newStatus: status,
-        suspensionDays: status === 'suspended' ? Number(days || 7) : null,
+        suspensionDuration,
+        suspensionUnit,
         reason: reason || 'Admin moderation'
       },
       ip: req.ip,
@@ -286,7 +319,7 @@ exports.updateUserStatus = async (req, res) => {
         message: isBlocked
           ? `Your account has been permanently blocked by an administrator. Reason: ${reason || 'Administrative safety review.'}`
           : isSuspended
-            ? `Your account has been temporarily suspended for ${Number(days || 7)} day(s). Reason: ${reason || 'Administrative safety review.'}`
+            ? `Your account has been temporarily suspended for ${suspensionDuration} ${suspensionUnit}${suspensionDuration === 1 ? '' : 's'}. Reason: ${reason || 'Administrative safety review.'}`
             : `Your account has been restored and is active again. Reason: ${reason || 'Administrative safety review.'}`,
         link: '/profile'
       });

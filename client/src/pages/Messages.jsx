@@ -38,7 +38,9 @@ export default function Messages() {
   const [ratingModalOpen, setRatingModalOpen] = useState(openRatingParam);
   const [markingSold, setMarkingSold] = useState(false);
 
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
+  const forceAutoScrollRef = useRef(false);
 
   // 1. Fetch conversations
   const fetchConversations = async () => {
@@ -73,11 +75,9 @@ export default function Messages() {
       if (data.success) {
         const fetchedMsgs = data.messages || [];
         setMessages((prev) => {
-          // If message count and last message ID are unchanged, preserve state reference to prevent auto-scrolling
           if (
             prev.length === fetchedMsgs.length &&
-            prev.length > 0 &&
-            prev[prev.length - 1]._id === fetchedMsgs[fetchedMsgs.length - 1]._id
+            prev.every((message, index) => message._id === fetchedMsgs[index]._id)
           ) {
             return prev;
           }
@@ -92,6 +92,7 @@ export default function Messages() {
 
   useEffect(() => {
     if (!activeConvId) return;
+    shouldAutoScrollRef.current = true;
     setLoadingMsgs(true);
     fetchActiveMessages(activeConvId).finally(() => setLoadingMsgs(false));
 
@@ -102,9 +103,15 @@ export default function Messages() {
     return () => clearInterval(interval);
   }, [activeConvId]);
 
-  // Scroll to bottom when messages change
+  // Follow new messages only while the reader is already at the bottom.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container || (!shouldAutoScrollRef.current && !forceAutoScrollRef.current)) return;
+
+    forceAutoScrollRef.current = false;
+    requestAnimationFrame(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    });
   }, [messages]);
 
   // Send message
@@ -119,6 +126,7 @@ export default function Messages() {
     try {
       const res = await api.post(`/messages/${activeConvId}`, { text: textToSend });
       if (res.success && res.message) {
+        forceAutoScrollRef.current = true;
         setMessages((prev) => [...prev, res.message]);
         fetchConversations();
       }
@@ -384,7 +392,15 @@ export default function Messages() {
               </div>
 
               {/* Message History */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40">
+              <div
+                ref={messagesContainerRef}
+                onScroll={(event) => {
+                  const container = event.currentTarget;
+                  shouldAutoScrollRef.current =
+                    container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+                }}
+                className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40"
+              >
                 {loadingMsgs ? (
                   <div className="space-y-3" aria-hidden="true">
                     <div className="h-12 w-2/3 bg-slate-200 rounded-xl animate-pulse" />
@@ -437,7 +453,6 @@ export default function Messages() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input Box */}
