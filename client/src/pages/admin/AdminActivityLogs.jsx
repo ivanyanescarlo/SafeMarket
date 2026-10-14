@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Search } from 'lucide-react';
 import api from '../../services/api';
 
@@ -7,7 +7,57 @@ export default function AdminActivityLogs() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [targetTypeFilter, setTargetTypeFilter] = useState('All');
+  const [dateFilterValue, setDateFilterValue] = useState('');
+  const [timeFilterValue, setTimeFilterValue] = useState('');
+  const [timePeriodFilterValue, setTimePeriodFilterValue] = useState('AM');
   const [loading, setLoading] = useState(true);
+  const hoursInputRef = useRef(null);
+  const minutesInputRef = useRef(null);
+  const [timeHours = '', timeMinutes = ''] = timeFilterValue.split(':');
+
+  const updateTimeSegment = (segment, value, shouldAdvance = true) => {
+    const digits = value.replace(/\D/g, '').slice(0, 2);
+    const nextHours = segment === 'hours' ? digits : timeHours;
+    const nextMinutes = segment === 'minutes' ? digits : timeMinutes;
+    setTimeFilterValue(nextHours || nextMinutes ? `${nextHours}:${nextMinutes}` : '');
+
+    if (shouldAdvance && segment === 'hours' && digits.length === 2) {
+      minutesInputRef.current?.focus();
+    }
+  };
+
+  const handleTimeSegmentKeyDown = (event, segment) => {
+    if (event.key === 'ArrowRight' && segment === 'hours') {
+      event.preventDefault();
+      minutesInputRef.current?.focus();
+    } else if (event.key === 'ArrowLeft' && segment === 'minutes') {
+      event.preventDefault();
+      hoursInputRef.current?.focus();
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      const currentValue = Number(segment === 'hours' ? timeHours : timeMinutes);
+      const min = segment === 'hours' ? 1 : 0;
+      const max = segment === 'hours' ? 12 : 59;
+      const step = event.key === 'ArrowUp' ? 1 : -1;
+      const nextValue = Number.isNaN(currentValue)
+        ? min
+        : ((currentValue - min + step + (max - min + 1)) % (max - min + 1)) + min;
+      updateTimeSegment(segment, String(nextValue).padStart(2, '0'), false);
+    }
+  };
+
+  const getCombinedDateTime = () => {
+    if (!dateFilterValue) return '';
+    const base = new Date(dateFilterValue);
+    if (timeFilterValue) {
+      let [hours, minutes] = timeFilterValue.split(':').map(Number);
+      if (Number.isNaN(hours) || Number.isNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return '';
+      if (timePeriodFilterValue === 'PM' && hours < 12) hours += 12;
+      if (timePeriodFilterValue === 'AM' && hours === 12) hours = 0;
+      base.setHours(hours, minutes, 0, 0);
+    }
+    return base.toISOString();
+  };
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -29,7 +79,7 @@ export default function AdminActivityLogs() {
 
   useEffect(() => {
     fetchLogs();
-  }, [targetTypeFilter]);
+  }, [targetTypeFilter, dateFilterValue, timeFilterValue, timePeriodFilterValue]);
 
   // Filter logs by search term
   const filteredLogs = logs.filter((log) => {
@@ -50,6 +100,7 @@ export default function AdminActivityLogs() {
     const targetType = (log.targetType || '').toLowerCase();
     const ip = (log.ip || '').toLowerCase();
     const url = (log.url || '').toLowerCase();
+    const email = (log.userId?.email || log.email || '').toLowerCase();
     const details = (
       typeof log.details === 'object'
         ? JSON.stringify(log.details)
@@ -58,6 +109,7 @@ export default function AdminActivityLogs() {
 
     return (
       userStr.toLowerCase().includes(query) ||
+      email.includes(query) ||
       action.includes(query) ||
       targetType.includes(query) ||
       ip.includes(query) ||
@@ -92,7 +144,64 @@ export default function AdminActivityLogs() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {/* Search Bar */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilterValue('');
+                setTimeFilterValue('');
+                setTimePeriodFilterValue('AM');
+              }}
+              className="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200"
+            >
+              Reset
+            </button>
+
+            <input
+              type="date"
+              value={dateFilterValue}
+              onChange={(e) => setDateFilterValue(e.target.value)}
+              className="px-2 py-1 bg-slate-50 border border-slate-300 rounded-xl text-[11px] font-semibold"
+            />
+
+            <div className="inline-flex items-center overflow-hidden rounded-xl border border-slate-300 bg-slate-50 focus-within:ring-2 focus-within:ring-safegreen-500">
+              <input
+                ref={hoursInputRef}
+                type="text"
+                inputMode="numeric"
+                placeholder="__"
+                value={timeHours}
+                maxLength={2}
+                onChange={(e) => updateTimeSegment('hours', e.target.value)}
+                onKeyDown={(e) => handleTimeSegmentKeyDown(e, 'hours')}
+                aria-label="Hours"
+                className="w-7 bg-transparent py-1 pl-2 text-right text-[11px] font-semibold focus:outline-none"
+              />
+              <span aria-hidden="true" className="py-1 text-[11px] font-semibold">:</span>
+              <input
+                ref={minutesInputRef}
+                type="text"
+                inputMode="numeric"
+                placeholder="__"
+                value={timeMinutes}
+                maxLength={2}
+                onChange={(e) => updateTimeSegment('minutes', e.target.value)}
+                onKeyDown={(e) => handleTimeSegmentKeyDown(e, 'minutes')}
+                aria-label="Minutes"
+                className="w-7 bg-transparent py-1 pr-2 text-left text-[11px] font-semibold focus:outline-none"
+              />
+              <select
+                value={timePeriodFilterValue}
+                onChange={(e) => setTimePeriodFilterValue(e.target.value)}
+                aria-label="AM or PM"
+                className="border-l border-slate-300 bg-slate-100 px-1.5 py-1 text-[11px] font-semibold focus:outline-none"
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+
           <div className="relative flex-1 md:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -105,7 +214,6 @@ export default function AdminActivityLogs() {
             />
           </div>
 
-          {/* Event Filter */}
           <select
             value={targetTypeFilter}
             onChange={(e) => setTargetTypeFilter(e.target.value)}
@@ -138,6 +246,7 @@ export default function AdminActivityLogs() {
                 <th className="py-3 px-4">Timestamp</th>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">User</th>
+                <th className="py-3 px-4">Email</th>
                 <th className="py-3 px-4">Target Type</th>
                 <th className="py-3 px-4">IP Address</th>
                 <th className="py-3 px-4">URL</th>
@@ -154,7 +263,8 @@ export default function AdminActivityLogs() {
                       day: 'numeric',
                       year: 'numeric',
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
+                      hour12: false
                     })}
                   </td>
 
@@ -168,6 +278,10 @@ export default function AdminActivityLogs() {
                   {/* 3. User - Clean display without email and without @ */}
                   <td className="py-3 px-4 font-bold text-slate-900">
                     {getCleanUserDisplay(log)}
+                  </td>
+
+                  <td className="py-3 px-4 text-slate-600">
+                    {log.userId?.email || log.email || '—'}
                   </td>
 
                   {/* 4. Target Type */}

@@ -57,7 +57,6 @@ export default function ProductCatalog() {
   const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
 
   const [listings, setListings] = useState([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -83,6 +82,7 @@ export default function ProductCatalog() {
       if (cityMunicipality && cityMunicipality !== 'All') params.set('cityMunicipality', cityMunicipality);
       if (riskLevel && riskLevel !== 'All') params.set('riskLevel', riskLevel);
       if (sort) params.set('sort', sort);
+      params.set('all', 'true');
 
       // Keep URL in sync
       setSearchParams(params, { replace: true });
@@ -90,7 +90,6 @@ export default function ProductCatalog() {
       const data = await api.get(`/listings?${params.toString()}`);
       if (data.success) {
         setListings(data.listings || []);
-        setTotal(data.total || 0);
       }
     } catch (err) {
       console.error('Failed to load catalog:', err);
@@ -108,12 +107,12 @@ export default function ProductCatalog() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchListings();
+    fetchListings(search);
   }, [category, condition, sort, province, cityMunicipality, riskLevel]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchListings();
+    fetchListings(search);
   };
 
   const handleResetFilters = () => {
@@ -237,6 +236,7 @@ export default function ProductCatalog() {
             <LocationSelector
               selectedProvince={province}
               selectedCity={cityMunicipality}
+              allowAllAreas
               onChange={({ province, cityMunicipality }) => {
                 setProvince(province);
                 setCityMunicipality(cityMunicipality);
@@ -274,6 +274,7 @@ export default function ProductCatalog() {
               ))}
             </div>
           )}
+
         </div>
 
       </div>

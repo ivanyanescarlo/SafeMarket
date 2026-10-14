@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminUsers({ onAction }) {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -20,7 +22,10 @@ export default function AdminUsers({ onAction }) {
 
       const res = await api.get(`/admin/users?${params.toString()}`);
       if (res.success) {
-        setUsers(res.users || []);
+        const visibleUsers = (res.users || []).filter(
+          (u) => u._id !== currentUser?._id && u.role !== 'admin'
+        );
+        setUsers(visibleUsers);
       }
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -38,24 +43,77 @@ export default function AdminUsers({ onAction }) {
     fetchUsers();
   };
 
-  const handleToggleStatus = async (user) => {
-    const newStatus = user.status === 'active' ? 'suspended' : 'active';
+  const handleSuspendUser = async (user) => {
+    const daysInput = prompt(`How many days should @${user.username} be suspended?`, '7');
+    if (daysInput === null) return;
+
+    const days = Number(daysInput);
+    if (!Number.isFinite(days) || days <= 0) {
+      alert('Please enter a valid number of days greater than zero.');
+      return;
+    }
+
     const reason = prompt(
-      `Please provide a reason to ${newStatus === 'suspended' ? 'block' : 'unblock'} @${user.username}:`,
-      newStatus === 'suspended' ? 'Policy violation / suspicious activity' : 'Account restored after review'
+      `Please provide a reason for suspending @${user.username}:`,
+      'Policy violation / suspicious activity'
     );
     if (reason === null) return;
 
     setActionLoading(user._id);
     try {
       await api.put(`/admin/users/${user._id}/status`, {
-        status: newStatus,
+        status: 'suspended',
+        days,
         reason
       });
       fetchUsers();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to update user status.');
+      alert(err.message || 'Failed to suspend user.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBlockUser = async (user) => {
+    const reason = prompt(
+      `This will permanently block @${user.username}. Enter a reason:`,
+      'Permanent violation / severe policy breach'
+    );
+    if (reason === null) return;
+
+    setActionLoading(user._id);
+    try {
+      await api.put(`/admin/users/${user._id}/status`, {
+        status: 'blocked',
+        reason
+      });
+      fetchUsers();
+      if (onAction) onAction();
+    } catch (err) {
+      alert(err.message || 'Failed to block user.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRestoreUser = async (user) => {
+    const reason = prompt(
+      `Please provide a reason for restoring @${user.username}:`,
+      'Account restored after review'
+    );
+    if (reason === null) return;
+
+    setActionLoading(user._id);
+    try {
+      await api.put(`/admin/users/${user._id}/status`, {
+        status: 'active',
+        reason
+      });
+      fetchUsers();
+      if (onAction) onAction();
+    } catch (err) {
+      alert(err.message || 'Failed to restore user.');
     } finally {
       setActionLoading(null);
     }
@@ -96,7 +154,6 @@ export default function AdminUsers({ onAction }) {
             <option value="All">All Roles</option>
             <option value="buyer">Buyers</option>
             <option value="seller">Sellers</option>
-            <option value="admin">Admins</option>
           </select>
 
           <select
@@ -106,7 +163,8 @@ export default function AdminUsers({ onAction }) {
           >
             <option value="All">All Status</option>
             <option value="active">Active</option>
-            <option value="suspended">Blocked</option>
+            <option value="suspended">Suspended</option>
+            <option value="blocked">Blocked</option>
           </select>
         </div>
       </div>
@@ -176,10 +234,12 @@ export default function AdminUsers({ onAction }) {
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         u.status === 'active'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : u.status === 'blocked'
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}
                     >
-                      {u.status === 'suspended' ? 'Blocked' : 'Active'}
+                      {u.status === 'blocked' ? 'Blocked' : u.status === 'suspended' ? 'Suspended' : 'Active'}
                     </span>
                   </td>
 
@@ -188,19 +248,55 @@ export default function AdminUsers({ onAction }) {
                   </td>
 
                   <td className="py-3 px-4 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={actionLoading === u._id}
-                        onClick={() => handleToggleStatus(u)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                          u.status === 'active'
-                            ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                        }`}
-                      >
-                        {u.status === 'active' ? 'Block' : 'Unblock'}
-                      </button>
+                    <div className="inline-flex items-center gap-2 flex-wrap justify-end">
+                      {u.status === 'active' ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={actionLoading === u._id}
+                            onClick={() => handleSuspendUser(u)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                          >
+                            Suspend
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionLoading === u._id}
+                            onClick={() => handleBlockUser(u)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                          >
+                            Block
+                          </button>
+                        </>
+                      ) : u.status === 'suspended' ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={actionLoading === u._id}
+                            onClick={() => handleRestoreUser(u)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                          >
+                            Unsuspend
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionLoading === u._id}
+                            onClick={() => handleBlockUser(u)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                          >
+                            Block
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={actionLoading === u._id}
+                          onClick={() => handleRestoreUser(u)}
+                          className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                        >
+                          Unblock
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -11,10 +11,11 @@ const { logActivity } = require('../utils/logger');
  */
 exports.getStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments({ isVerified: true });
+    const range = req.query.range || 'week';
+    const totalUsers = await User.countDocuments({ isVerified: true, role: { $ne: 'admin' } });
     const totalBuyers = await User.countDocuments({ role: 'buyer', isVerified: true });
     const totalSellers = await User.countDocuments({ role: 'seller', isVerified: true });
-    const totalSuspendedUsers = await User.countDocuments({ status: 'suspended', isVerified: true });
+    const totalSuspendedUsers = await User.countDocuments({ status: 'suspended', isVerified: true, role: { $ne: 'admin' } });
 
     const totalListings = await Listing.countDocuments();
     const activeListings = await Listing.countDocuments({ status: 'active' });
@@ -26,40 +27,96 @@ exports.getStats = async (req, res) => {
 
     const recentLogs = await ActivityLog.find().sort({ createdAt: -1 }).limit(10);
 
-    // Compute dynamic weekly activity trend from database
-    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const allListings = await Listing.find({}, 'createdAt');
-    const allUsers = await User.find({ isVerified: true }, 'createdAt');
+    const makeTrendSeries = async (selectedRange) => {
+      const now = new Date();
+      const allListings = await Listing.find({}, 'createdAt');
+      const allUsers = await User.find({ isVerified: true }, 'createdAt');
+      const firstActivity = [...allListings, ...allUsers].reduce((earliest, item) => {
+        const createdAt = new Date(item.createdAt);
+        return createdAt < earliest ? createdAt : earliest;
+      }, now);
+      const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const buckets = [];
+      let start;
+      let count;
+      let increment;
 
-    const dayCounts = {
-      Mon: { day: 'Mon', listings: 0, users: 0 },
-      Tue: { day: 'Tue', listings: 0, users: 0 },
-      Wed: { day: 'Wed', listings: 0, users: 0 },
-      Thu: { day: 'Thu', listings: 0, users: 0 },
-      Fri: { day: 'Fri', listings: 0, users: 0 },
-      Sat: { day: 'Sat', listings: 0, users: 0 },
-      Sun: { day: 'Sun', listings: 0, users: 0 }
+      if (selectedRange === 'day') {
+        start = new Date(now);
+        start.setMinutes(0, 0, 0);
+        start.setHours(start.getHours() - 23);
+        count = 24;
+        increment = (date) => date.setHours(date.getHours() + 1);
+      } else if (selectedRange === 'week') {
+        start = startOfDay(now);
+        start.setDate(start.getDate() - 6);
+        count = 7;
+        increment = (date) => date.setDate(date.getDate() + 1);
+      } else if (selectedRange === 'month') {
+        start = startOfDay(now);
+        start.setDate(start.getDate() - 29);
+        count = 30;
+        increment = (date) => date.setDate(date.getDate() + 1);
+      } else if (selectedRange === 'sixMonths') {
+        start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        count = 6;
+        increment = (date) => date.setMonth(date.getMonth() + 1);
+      } else if (selectedRange === 'year') {
+        start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        count = 12;
+        increment = (date) => date.setMonth(date.getMonth() + 1);
+      } else {
+        start = new Date(firstActivity.getFullYear(), firstActivity.getMonth(), 1);
+        count = Math.max(1, (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth() + 1);
+        increment = (date) => date.setMonth(date.getMonth() + 1);
+      }
+
+      const cursor = new Date(start);
+      for (let index = 0; index < count; index += 1) {
+        const bucketStart = new Date(cursor);
+        const nextStart = new Date(cursor);
+        increment(nextStart);
+        let label;
+
+        if (selectedRange === 'day') {
+          label = bucketStart.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        } else if (selectedRange === 'week') {
+          label = bucketStart.toLocaleDateString('en-US', { weekday: 'short' });
+        } else if (selectedRange === 'month') {
+          label = bucketStart.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        } else if (selectedRange === 'all' || (selectedRange === 'year' && bucketStart.getFullYear() !== now.getFullYear())) {
+          label = bucketStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        } else {
+          label = bucketStart.toLocaleDateString('en-US', { month: 'short' });
+        }
+
+        if (selectedRange === 'all' && count > 1 && index === 0) {
+          label = firstActivity.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        } else if (selectedRange === 'all' && count > 1 && index === count - 1) {
+          label = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        buckets.push({
+          start: bucketStart,
+          end: nextStart,
+          point: { label, day: label, listings: 0, users: 0 }
+        });
+        increment(cursor);
+      }
+
+      const addToBucket = (item, field) => {
+        const createdAt = new Date(item.createdAt);
+        const bucket = buckets.find((entry) => createdAt >= entry.start && createdAt < entry.end);
+        if (bucket) bucket.point[field] += 1;
+      };
+
+      allListings.forEach((item) => addToBucket(item, 'listings'));
+      allUsers.forEach((item) => addToBucket(item, 'users'));
+
+      return buckets.map(({ point }) => point);
     };
 
-    allListings.forEach((item) => {
-      const dayName = daysOfWeek[new Date(item.createdAt).getDay()];
-      if (dayCounts[dayName]) dayCounts[dayName].listings += 1;
-    });
-
-    allUsers.forEach((usr) => {
-      const dayName = daysOfWeek[new Date(usr.createdAt).getDay()];
-      if (dayCounts[dayName]) dayCounts[dayName].users += 1;
-    });
-
-    const weeklyTrend = [
-      dayCounts.Mon,
-      dayCounts.Tue,
-      dayCounts.Wed,
-      dayCounts.Thu,
-      dayCounts.Fri,
-      dayCounts.Sat,
-      dayCounts.Sun
-    ];
+    const trendData = await makeTrendSeries(range);
 
     res.status(200).json({
       success: true,
@@ -80,7 +137,7 @@ exports.getStats = async (req, res) => {
           total: totalReports,
           pending: pendingReports
         },
-        weeklyTrend
+        trendData
       },
       recentLogs
     });
@@ -100,7 +157,7 @@ exports.getStats = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { search, role, status, page = 1, limit = 50 } = req.query;
-    const query = { isVerified: true };
+    const query = { isVerified: true, role: { $ne: 'admin' } };
 
     if (search) {
       const searchRegex = new RegExp(search.trim(), 'i');
@@ -113,7 +170,9 @@ exports.getUsers = async (req, res) => {
     }
 
     if (role && role !== 'All') {
-      query.role = role;
+      if (role !== 'admin') {
+        query.role = role;
+      }
     }
 
     if (status && status !== 'All') {
@@ -152,7 +211,7 @@ exports.updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body || {};
-    const { status, reason } = body;
+    const { status, reason, days } = body;
 
     if (Object.prototype.hasOwnProperty.call(body, 'role')) {
       return res.status(400).json({
@@ -161,7 +220,7 @@ exports.updateUserStatus = async (req, res) => {
       });
     }
 
-    if (!['active', 'suspended'].includes(status)) {
+    if (!['active', 'suspended', 'blocked'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Choose a valid account status.'
@@ -186,6 +245,17 @@ exports.updateUserStatus = async (req, res) => {
 
     user.status = status;
 
+    if (status === 'suspended') {
+      const suspendDays = Number(days || 7);
+      if (Number.isFinite(suspendDays) && suspendDays > 0) {
+        user.suspendedUntil = new Date(Date.now() + suspendDays * 24 * 60 * 60 * 1000);
+      } else {
+        user.suspendedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      }
+    } else {
+      user.suspendedUntil = null;
+    }
+
     await user.save();
 
     // Log admin moderation
@@ -198,6 +268,7 @@ exports.updateUserStatus = async (req, res) => {
       details: {
         affectedUser: user.username,
         newStatus: status,
+        suspensionDays: status === 'suspended' ? Number(days || 7) : null,
         reason: reason || 'Admin moderation'
       },
       ip: req.ip,
@@ -207,11 +278,16 @@ exports.updateUserStatus = async (req, res) => {
     // Notify user if status changed
     if (status) {
       const isSuspended = status === 'suspended';
+      const isBlocked = status === 'blocked';
       await Notification.create({
         recipientId: user._id,
-        type: isSuspended ? 'violation' : 'system',
-        title: isSuspended ? '⚠️ Account Blocked & Violation Notice' : 'Account Unblocked',
-        message: `Your account has been ${isSuspended ? 'blocked' : 'unblocked'} by an administrator. Reason: ${reason || 'Administrative safety review.'}`,
+        type: isSuspended || isBlocked ? 'violation' : 'system',
+        title: isBlocked ? '🚫 Account Permanently Blocked' : isSuspended ? '⏳ Account Temporarily Suspended' : 'Account Restored',
+        message: isBlocked
+          ? `Your account has been permanently blocked by an administrator. Reason: ${reason || 'Administrative safety review.'}`
+          : isSuspended
+            ? `Your account has been temporarily suspended for ${Number(days || 7)} day(s). Reason: ${reason || 'Administrative safety review.'}`
+            : `Your account has been restored and is active again. Reason: ${reason || 'Administrative safety review.'}`,
         link: '/profile'
       });
     }
@@ -383,7 +459,7 @@ exports.getAiMonitoring = async (req, res) => {
  */
 exports.getLogs = async (req, res) => {
   try {
-    const { action, targetType, page = 1, limit = 50 } = req.query;
+    const { action, targetType, page = 1, limit = 50, before, after } = req.query;
     const query = {};
 
     if (action && action !== 'All') {
@@ -392,6 +468,20 @@ exports.getLogs = async (req, res) => {
 
     if (targetType && targetType !== 'All') {
       query.targetType = targetType;
+    }
+
+    if (before) {
+      query.createdAt = {
+        ...(query.createdAt || {}),
+        $lt: new Date(before)
+      };
+    }
+
+    if (after) {
+      query.createdAt = {
+        ...(query.createdAt || {}),
+        $gt: new Date(after)
+      };
     }
 
     const skip = (Number(page) - 1) * Number(limit);

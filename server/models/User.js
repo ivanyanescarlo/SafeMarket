@@ -58,8 +58,12 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'suspended'],
+      enum: ['active', 'suspended', 'blocked'],
       default: 'active'
+    },
+    suspendedUntil: {
+      type: Date,
+      default: null
     },
     profileImage: {
       type: String,

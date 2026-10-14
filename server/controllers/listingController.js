@@ -152,9 +152,11 @@ exports.getListings = async (req, res) => {
       cityMunicipality,
       riskLevel,
       sort,
+      all,
       page = 1,
       limit = 24
     } = req.query;
+    const fetchAll = all === 'true';
 
     const query = { status: 'active' };
 
@@ -216,11 +218,15 @@ exports.getListings = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const total = await Listing.countDocuments(query);
-    const listings = await Listing.find(query)
+    let listingsQuery = Listing.find(query)
       .populate('sellerId', 'firstName lastName username profileImage averageRating ratingCount')
-      .sort(sortOption)
-      .skip(skip)
-      .limit(Number(limit));
+      .sort(sortOption);
+
+    if (!fetchAll) {
+      listingsQuery = listingsQuery.skip(skip).limit(Number(limit));
+    }
+
+    const listings = await listingsQuery;
 
     res.status(200).json({
       success: true,

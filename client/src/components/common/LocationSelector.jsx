@@ -191,17 +191,18 @@ export default function LocationSelector({
   selectedCity = '',
   onChange,
   required = false,
-  className = ''
+  className = '',
+  allowAllAreas = false
 }) {
-  // Always enforce Pangasinan as the province
+  // Existing forms require Pangasinan; the catalog can leave location unfiltered.
   useEffect(() => {
-    if (selectedProvince !== 'Pangasinan') {
+    if (!allowAllAreas && selectedProvince !== 'Pangasinan') {
       onChange({
         province: 'Pangasinan',
         cityMunicipality: selectedCity
       });
     }
-  }, [selectedProvince]);
+  }, [selectedProvince, allowAllAreas]);
 
   const handleCitySelect = (city) => {
     onChange({
@@ -210,15 +211,22 @@ export default function LocationSelector({
     });
   };
 
+  const handleProvinceSelect = (provinceOption) => {
+    onChange({
+      province: provinceOption === 'All Areas' ? '' : provinceOption,
+      cityMunicipality: ''
+    });
+  };
+
   return (
     <div className={`grid grid-cols-1 gap-3.5 ${className}`}>
       {/* Province Dropdown - Fixed to Pangasinan */}
       <CustomScrollDropdown
         label="Province"
-        value="Pangasinan"
-        placeholder="Pangasinan"
-        options={["Pangasinan"]}
-        onSelect={() => {}}
+        value={allowAllAreas ? selectedProvince || 'All Areas' : 'Pangasinan'}
+        placeholder={allowAllAreas ? 'All Areas' : 'Pangasinan'}
+        options={allowAllAreas ? ['All Areas', 'Pangasinan'] : ['Pangasinan']}
+        onSelect={allowAllAreas ? handleProvinceSelect : () => {}}
         disabled={false}
         required={required}
       />
@@ -227,11 +235,11 @@ export default function LocationSelector({
       <CustomScrollDropdown
         label="City / Municipality"
         value={selectedCity}
-        placeholder="Select City / Municipality"
+        placeholder={allowAllAreas && !selectedProvince ? 'Select a province first' : 'Select City / Municipality'}
         options={PANGASINAN_CITIES}
         onSelect={handleCitySelect}
-        disabled={false}
-        required={required}
+        disabled={allowAllAreas && !selectedProvince}
+        required={required && (!allowAllAreas || Boolean(selectedProvince))}
       />
     </div>
   );

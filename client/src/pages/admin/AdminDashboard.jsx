@@ -49,13 +49,14 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
+  const [trendRange, setTrendRange] = useState('week');
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = async () => {
+  const fetchStats = async (range = trendRange) => {
     setLoading(true);
     try {
       const [statsRes, listingsRes] = await Promise.all([
-        api.get('/admin/stats'),
+        api.get(`/admin/stats?range=${range}`),
         api.get('/admin/listings?limit=100')
       ]);
 
@@ -85,8 +86,8 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    fetchStats(trendRange);
+  }, [trendRange]);
 
   const TABS = [
     { id: 'dashboard', label: 'Dashboard', icon: Activity },
@@ -99,9 +100,14 @@ export default function AdminDashboard() {
 
   // Dynamic activity trend from database stats
   const trendData = useMemo(() => {
+    if (stats?.trendData && Array.isArray(stats.trendData)) {
+      return stats.trendData;
+    }
+
     if (stats?.weeklyTrend && Array.isArray(stats.weeklyTrend)) {
       return stats.weeklyTrend;
     }
+
     return [
       { day: 'Mon', listings: 0, users: 0 },
       { day: 'Tue', listings: 0, users: 0 },
@@ -111,7 +117,7 @@ export default function AdminDashboard() {
       { day: 'Sat', listings: 0, users: 0 },
       { day: 'Sun', listings: 0, users: 0 }
     ];
-  }, [stats?.weeklyTrend]);
+  }, [stats?.trendData, stats?.weeklyTrend]);
 
   const defaultPieData = categoryData.length > 0 ? categoryData : [
     { name: 'Phones & Gadgets', value: 35 },
@@ -178,17 +184,19 @@ export default function AdminDashboard() {
           
           {/* 1. DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-fade-in">
+              <div className="flex flex-col gap-8 animate-fade-in">
               {/* Counters Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="order-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Users</span>
                   <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.users?.total || 0}</p>
-                  <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+                  <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
                     <span>{stats?.users?.sellers || 0} Sellers</span>
                     <span>•</span>
                     <span>{stats?.users?.buyers || 0} Buyers</span>
+                    <span>•</span>
+                    <span>{stats?.users?.suspended || 0} Suspended</span>
                   </div>
                 </div>
 
@@ -219,28 +227,64 @@ export default function AdminDashboard() {
               </div>
 
               {/* Charts Section under Total Board: Left Line Chart & Right Pie Chart */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="order-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Left: Listings & Activity Trend */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-safegreen-600" />
-                      <span>Weekly Marketplace Activity</span>
-                    </h3>
+                        <TrendingUp className="w-4 h-4 text-safegreen-600" />
+                        <span>{{ day: 'Daily', week: 'Weekly', month: 'Monthly', sixMonths: '6-Month', year: 'Yearly', all: 'All-Time' }[trendRange]} Marketplace Activity</span>
+                      </h3>
+                    <select
+                      value={trendRange}
+                      onChange={(e) => {
+                        setTrendRange(e.target.value);
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-safegreen-500/60"
+                    >
+                      <option value="day">1D</option>
+                      <option value="week">1W</option>
+                      <option value="month">1M</option>
+                      <option value="sixMonths">6M</option>
+                      <option value="year">1Y</option>
+                      <option value="all">All</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Volume</div>
+                      <div className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">{(trendData.reduce((sum, item) => sum + (item.listings || 0), 0) || 0)}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Users</div>
+                      <div className="mt-1 text-lg font-bold text-safegreen-600">{(trendData.reduce((sum, item) => sum + (item.users || 0), 0) || 0)}</div>
+                    </div>
                   </div>
 
                   <div className="h-64 w-full pt-2">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trendData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5e1" />
-                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <LineChart data={trendData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="listingsGlow" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#34d399" />
+                            <stop offset="100%" stopColor="#22c55e" />
+                          </linearGradient>
+                          <linearGradient id="usersGlow" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#60a5fa" />
+                            <stop offset="100%" stopColor="#3b82f6" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
                         <Tooltip
-                          contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          cursor={{ stroke: '#059669', strokeOpacity: 0.35 }}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', background: '#ffffff', color: '#0f172a', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         />
-                        <Line type="monotone" dataKey="listings" stroke="#059669" strokeWidth={3} dot={{ r: 4 }} name="New Listings" />
-                        <Line type="monotone" dataKey="users" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} name="New Registrations" />
+                        <Line type="monotone" dataKey="listings" stroke="url(#listingsGlow)" strokeWidth={3} dot={{ r: 3, fill: '#34d399', stroke: 'none' }} activeDot={{ r: 6, fill: '#dcfce7', stroke: '#22c55e' }} name="New Listings" />
+                        <Line type="monotone" dataKey="users" stroke="url(#usersGlow)" strokeWidth={2.5} dot={{ r: 2.5, fill: '#60a5fa', stroke: 'none' }} activeDot={{ r: 5, fill: '#dbeafe', stroke: '#3b82f6' }} name="New Registrations" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -282,7 +326,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Audit Security Logs Card */}
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="order-3 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-safegreen-600" />
@@ -309,7 +353,7 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-400">
-                          {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}
                         </span>
                       </div>
                     ))

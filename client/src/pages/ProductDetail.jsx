@@ -347,7 +347,7 @@ export default function ProductDetail() {
               <div className="flex items-center justify-between">
                 <span>Member Since:</span>
                 <span className="font-semibold text-slate-800">
-                  {seller.createdAt ? new Date(seller.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '2026'}
+                  {seller.createdAt ? new Date(seller.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '2026'}
                 </span>
               </div>
             </div>
