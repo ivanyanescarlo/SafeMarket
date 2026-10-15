@@ -3,6 +3,19 @@ import api from '../services/api';
 import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
+const ADMIN_READ_NOTIFICATIONS_KEY = 'safemarket_admin_read_notifications';
+
+const getAdminReadNotificationIds = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(ADMIN_READ_NOTIFICATIONS_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+};
+
+const saveAdminReadNotificationIds = (ids) => {
+  localStorage.setItem(ADMIN_READ_NOTIFICATIONS_KEY, JSON.stringify([...ids]));
+};
 
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
@@ -27,19 +40,21 @@ export const NotificationProvider = ({ children }) => {
       if (user.role === 'admin') {
         try {
           const [reportsRes, aiRes] = await Promise.all([
-            api.get('/admin/reports?status=pending'),
+            api.get('/reports?status=Pending'),
             api.get('/admin/ai-monitoring?riskLevel=High')
           ]);
 
           const adminNotifs = [];
+          const readIds = getAdminReadNotificationIds();
           if (reportsRes.success && reportsRes.reports) {
             reportsRes.reports.forEach(r => {
+              const notificationId = `rep_${r._id}`;
               adminNotifs.push({
-                _id: `rep_${r._id}`,
+                _id: notificationId,
                 title: '🚨 Community Scam Report',
                 message: `Buyer reported item "${r.listingId?.title || 'Listing'}": ${r.reason || 'Suspicious activity'}`,
                 type: 'violation',
-                read: r.status === 'resolved' || r.status === 'dismissed',
+                read: readIds.has(notificationId),
                 createdAt: r.createdAt,
                 link: '/admin'
               });
@@ -48,12 +63,13 @@ export const NotificationProvider = ({ children }) => {
 
           if (aiRes.success && aiRes.flaggedListings) {
             aiRes.flaggedListings.forEach(item => {
+              const notificationId = `ai_${item._id}`;
               adminNotifs.push({
-                _id: `ai_${item._id}`,
+                _id: notificationId,
                 title: '⚠️ High Risk AI Scam Flag',
                 message: `AI detected High Risk indicator on "${item.title}" (₱${item.price?.toLocaleString()}).`,
                 type: 'violation',
-                read: false,
+                read: readIds.has(notificationId),
                 createdAt: item.createdAt,
                 link: '/admin'
               });
@@ -94,6 +110,15 @@ export const NotificationProvider = ({ children }) => {
   }, [user]);
 
   const markAsRead = async (id) => {
+    if (id.startsWith('rep_') || id.startsWith('ai_')) {
+      const readIds = getAdminReadNotificationIds();
+      readIds.add(id);
+      saveAdminReadNotificationIds(readIds);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      return;
+    }
+
     try {
       await api.put(`/notifications/${id}/read`);
       setNotifications(prev =>
@@ -106,6 +131,15 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const markAllAsRead = async () => {
+    const virtualIds = notifications
+      .filter((notification) => notification._id.startsWith('rep_') || notification._id.startsWith('ai_'))
+      .map((notification) => notification._id);
+    if (virtualIds.length > 0) {
+      const readIds = getAdminReadNotificationIds();
+      virtualIds.forEach((id) => readIds.add(id));
+      saveAdminReadNotificationIds(readIds);
+    }
+
     try {
       await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));

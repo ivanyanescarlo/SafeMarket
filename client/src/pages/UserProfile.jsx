@@ -401,12 +401,24 @@ export default function UserProfile() {
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Mobile Number
                 </label>
-                <input
-                  type="tel"
-                  value={editForm.mobileNumber}
-                  onChange={(e) => setEditForm({ ...editForm, mobileNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                />
+                <div className="flex items-center">
+                  <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-sm font-bold text-slate-700 select-none">+63</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={String(editForm.mobileNumber || '').replace(/\D/g, '').replace(/^63/, '').replace(/^0/, '')}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, '');
+                      if (digits && !digits.startsWith('9')) digits = digits.replace(/^[^9]*/, '');
+                      if (digits.length <= 10) {
+                        setEditForm({ ...editForm, mobileNumber: digits ? `+63${digits}` : '' });
+                      }
+                    }}
+                    placeholder="9171234567"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-r-lg text-sm"
+                  />
+                </div>
               </div>
             </div>
 

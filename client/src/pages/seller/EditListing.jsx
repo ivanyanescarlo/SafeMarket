@@ -86,7 +86,7 @@ export default function EditListing() {
           setFormData({
             title: l.title || '',
             description: l.description || '',
-            price: l.price || '',
+            price: l.price ? String(l.price) : '',
             category: l.category || CATEGORIES[0],
             condition: l.condition || 'Lightly Used',
             brand: l.brand || '',
@@ -273,9 +273,9 @@ export default function EditListing() {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={7}
                 name="price"
-                value={formData.price}
+                value={String(formData.price).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 onKeyDown={handleDigitsOnlyKeyDown}
                 onChange={handleChange}
                 required

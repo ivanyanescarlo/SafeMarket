@@ -234,7 +234,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-safegreen-600" />
-                        <span>{{ day: 'Daily', week: 'Weekly', month: 'Monthly', sixMonths: '6-Month', year: 'Yearly', all: 'All-Time' }[trendRange]} Marketplace Activity</span>
+                        <span>Total Sign-ups</span>
                       </h3>
                     <select
                       value={trendRange}
@@ -243,7 +243,6 @@ export default function AdminDashboard() {
                       }}
                       className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-safegreen-500/60"
                     >
-                      <option value="day">1D</option>
                       <option value="week">1W</option>
                       <option value="month">1M</option>
                       <option value="sixMonths">6M</option>

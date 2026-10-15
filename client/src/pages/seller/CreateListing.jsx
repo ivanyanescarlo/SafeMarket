@@ -243,9 +243,9 @@ export default function CreateListing() {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={7}
                 name="price"
-                value={formData.price}
+                value={formData.price.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 onKeyDown={handleDigitsOnlyKeyDown}
                 onChange={handleChange}
                 required

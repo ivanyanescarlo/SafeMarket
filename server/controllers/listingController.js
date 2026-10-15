@@ -260,6 +260,13 @@ exports.getListingById = async (req, res) => {
       });
     }
 
+    if (listing.status === 'removed' && req.user?.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Product listing not found.'
+      });
+    }
+
     // Increment view count asynchronously
     listing.views = (listing.views || 0) + 1;
     await listing.save();
@@ -291,7 +298,10 @@ exports.getListingById = async (req, res) => {
  */
 exports.getMyListings = async (req, res) => {
   try {
-    const listings = await Listing.find({ sellerId: req.user._id }).sort({ createdAt: -1 });
+    const listings = await Listing.find({
+      sellerId: req.user._id,
+      status: { $ne: 'removed' }
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -329,6 +339,13 @@ exports.updateListing = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to edit this listing.'
+      });
+    }
+
+    if (listing.status === 'removed') {
+      return res.status(400).json({
+        success: false,
+        message: 'A listing removed by an administrator cannot be restored or edited.'
       });
     }
 

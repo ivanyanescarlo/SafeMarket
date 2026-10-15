@@ -109,7 +109,7 @@ export default function AdminListings({ onAction }) {
           >
             <option value="All">All Status</option>
             <option value="active">Active</option>
-            <option value="removed">Removed by Admin</option>
+            <option value="removed">Removed</option>
             <option value="sold">Sold</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -207,17 +207,7 @@ export default function AdminListings({ onAction }) {
                         Take Down
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        disabled={actionLoading === item._id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleModerate(item, 'active');
-                        }}
-                        className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200"
-                      >
-                        Restore
-                      </button>
+                      <span className="text-[10px] font-semibold text-slate-400">Permanently removed</span>
                     )}
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Star, Bookmark, Check } from 'lucide-react';
+import { MapPin, Star, ShoppingCart } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -68,7 +68,7 @@ export default function ListingCard({ listing }) {
                 : 'bg-white/90 backdrop-blur-md text-slate-700 hover:bg-white hover:text-safegreen-700 hover:scale-110'
             }`}
           >
-            {inCart ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+            <ShoppingCart className="w-4 h-4" />
           </button>
         </div>
 

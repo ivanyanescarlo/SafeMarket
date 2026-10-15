@@ -14,8 +14,7 @@ import {
   Sparkles,
   ArrowLeft,
   UserCheck,
-  Bookmark,
-  Check
+  ShoppingCart
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -166,7 +165,7 @@ export default function ProductDetail() {
         <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-3" />
         <h2 className="text-lg font-bold text-slate-800">Listing Not Found</h2>
         <p className="text-xs text-slate-500 mt-1">
-          This product may have been sold or removed by administrators.
+          This product may have been sold or removed.
         </p>
         <Link
           to="/products"
@@ -468,7 +467,7 @@ export default function ProductDetail() {
                       onClick={handleToggleCart}
                       className="w-full py-3 px-4 bg-emerald-100 border border-emerald-300 text-safegreen-900 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2"
                     >
-                      <Check className="w-4 h-4 text-safegreen-700" />
+                      <ShoppingCart className="w-4 h-4 text-safegreen-700" />
                       <span>Saved in Cart (Click to Remove)</span>
                     </button>
                   ) : (
@@ -477,7 +476,7 @@ export default function ProductDetail() {
                       onClick={handleToggleCart}
                       className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
                     >
-                      <Bookmark className="w-4 h-4" />
+                      <ShoppingCart className="w-4 h-4" />
                       <span>Save Item</span>
                     </button>
                   )}

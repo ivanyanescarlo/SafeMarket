@@ -409,6 +409,19 @@ exports.moderateListing = async (req, res) => {
     }
 
     const wasRemoved = listing.status === 'removed';
+    if (!['active', 'sold', 'inactive', 'removed'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Choose a valid listing status.'
+      });
+    }
+    if (wasRemoved && status !== 'removed') {
+      return res.status(400).json({
+        success: false,
+        message: 'A listing removed by an administrator cannot be restored.'
+      });
+    }
+
     if (status) listing.status = status;
     if (removalReason !== undefined) listing.removalReason = removalReason;
 
@@ -460,7 +473,7 @@ exports.moderateListing = async (req, res) => {
 exports.getAiMonitoring = async (req, res) => {
   try {
     const { riskLevel = 'High' } = req.query;
-    const query = {};
+    const query = { status: 'active' };
 
     if (riskLevel && riskLevel !== 'All') {
       query.riskLevel = riskLevel;

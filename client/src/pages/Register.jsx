@@ -92,7 +92,7 @@ export default function Register() {
     }
 
     const cleanMobileDigits = rawMobileNumber.replace(/\D/g, '');
-    if (cleanMobileDigits.length !== 10) {
+    if (cleanMobileDigits.length !== 10 || !cleanMobileDigits.startsWith('9')) {
       focusField('mobile', mobileRef, 'Please enter a valid 10-digit Philippine mobile number after +63.');
       return;
     }
@@ -264,6 +264,7 @@ export default function Register() {
                       let val = e.target.value.replace(/\D/g, '');
                       if (val.startsWith('0')) val = val.substring(1);
                       if (val.startsWith('63')) val = val.substring(2);
+                      if (val && !val.startsWith('9')) val = val.replace(/^[^9]*/, '');
                       if (val.length <= 10) setRawMobileNumber(val);
                       if (invalidField === 'mobile') setInvalidField('');
                     }}
