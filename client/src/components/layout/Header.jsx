@@ -158,7 +158,7 @@ export default function Header() {
             {!isAdmin && (
               <Link
                 to="/cart"
-                title="Saved Items"
+                title="Cart"
                 className="relative p-2 text-slate-600 hover:text-safegreen-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />

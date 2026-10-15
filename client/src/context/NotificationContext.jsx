@@ -53,7 +53,7 @@ export const NotificationProvider = ({ children }) => {
                 _id: notificationId,
                 title: '🚨 Community Scam Report',
                 message: `Buyer reported item "${r.listingId?.title || 'Listing'}": ${r.reason || 'Suspicious activity'}`,
-                type: 'violation',
+                type: 'report',
                 read: readIds.has(notificationId),
                 createdAt: r.createdAt,
                 link: '/admin'
@@ -68,7 +68,7 @@ export const NotificationProvider = ({ children }) => {
                 _id: notificationId,
                 title: '⚠️ High Risk AI Scam Flag',
                 message: `AI detected High Risk indicator on "${item.title}" (₱${item.price?.toLocaleString()}).`,
-                type: 'violation',
+                type: 'ai_risk',
                 read: readIds.has(notificationId),
                 createdAt: item.createdAt,
                 link: '/admin'

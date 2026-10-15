@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Star, ShoppingCart } from 'lucide-react';
+import { MapPin, Star, ShoppingCart, Check } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -61,14 +61,14 @@ export default function ListingCard({ listing }) {
           <button
             type="button"
             onClick={handleCartClick}
-            title={inCart ? 'Remove from Saved Items' : 'Save Item'}
+            title={inCart ? 'Remove from Cart' : 'Add to Cart'}
             className={`p-2 rounded-xl transition-all shadow-md flex items-center justify-center ${
               inCart
                 ? 'bg-safegreen-600 text-white hover:bg-safegreen-700'
                 : 'bg-white/90 backdrop-blur-md text-slate-700 hover:bg-white hover:text-safegreen-700 hover:scale-110'
             }`}
           >
-            <ShoppingCart className="w-4 h-4" />
+            {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
           </button>
         </div>
 
