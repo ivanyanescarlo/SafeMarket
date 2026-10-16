@@ -11,7 +11,7 @@ const REPORT_REASONS = [
   'Other'
 ];
 
-export default function ReportModal({ isOpen, onClose, listingId, listingTitle, onSubmitted }) {
+export default function ReportModal({ isOpen, onClose, listingId, listingTitle }) {
   const [reason, setReason] = useState(REPORT_REASONS[0]);
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,12 +26,11 @@ export default function ReportModal({ isOpen, onClose, listingId, listingTitle, 
     setError('');
 
     try {
-      const response = await api.post('/reports', {
+      await api.post('/reports', {
         listingId,
         reason,
         description
       });
-      onSubmitted?.(response.reportCount);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);

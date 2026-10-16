@@ -1,5 +1,4 @@
 const Listing = require('../models/Listing');
-const Report = require('../models/Report');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { analyzeListingWithGemini } = require('../utils/aiRiskAnalyzer');
@@ -278,12 +277,10 @@ exports.getListingById = async (req, res) => {
       _id: { $ne: listing._id },
       status: 'active'
     }).limit(4);
-    const reportCount = await Report.countDocuments({ listingId: listing._id });
 
     res.status(200).json({
       success: true,
       listing,
-      reportCount,
       otherSellerListings
     });
   } catch (error) {
