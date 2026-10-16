@@ -56,7 +56,7 @@ export const NotificationProvider = ({ children }) => {
                 type: 'report',
                 read: readIds.has(notificationId),
                 createdAt: r.createdAt,
-                link: '/admin'
+                link: r.listingId?._id ? `/product/${r.listingId._id}` : '/admin'
               });
             });
           }
@@ -71,7 +71,7 @@ export const NotificationProvider = ({ children }) => {
                 type: 'ai_risk',
                 read: readIds.has(notificationId),
                 createdAt: item.createdAt,
-                link: '/admin'
+                link: `/product/${item._id}`
               });
             });
           }

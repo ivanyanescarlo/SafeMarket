@@ -30,7 +30,7 @@ exports.getStats = async (req, res) => {
     const makeTrendSeries = async (selectedRange) => {
       const now = new Date();
       const allListings = await Listing.find({}, 'createdAt');
-      const allUsers = await User.find({ isVerified: true }, 'createdAt');
+      const allUsers = await User.find({ isVerified: true, role: { $ne: 'admin' } }, 'createdAt');
       const firstActivity = [...allListings, ...allUsers].reduce((earliest, item) => {
         const createdAt = new Date(item.createdAt);
         return createdAt < earliest ? createdAt : earliest;
@@ -484,10 +484,15 @@ exports.getAiMonitoring = async (req, res) => {
     const flaggedListings = await Listing.find(query)
       .populate('sellerId', 'firstName lastName username email averageRating ratingCount')
       .sort({ createdAt: -1 });
+    const [highRiskCount, mediumRiskCount] = await Promise.all([
+      Listing.countDocuments({ status: 'active', riskLevel: 'High' }),
+      Listing.countDocuments({ status: 'active', riskLevel: 'Medium' })
+    ]);
 
     res.status(200).json({
       success: true,
       count: flaggedListings.length,
+      riskCounts: { High: highRiskCount, Medium: mediumRiskCount },
       flaggedListings
     });
   } catch (error) {

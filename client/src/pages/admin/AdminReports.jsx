@@ -95,19 +95,22 @@ export default function AdminReports({ onAction }) {
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
               <tr>
+                <th className="py-3 px-4">No.</th>
                 <th className="py-3 px-4">Reported Listing</th>
                 <th className="py-3 px-4">Reason & Explanation</th>
                 <th className="py-3 px-4">Reporter</th>
                 <th className="py-3 px-4">AI Risk Level</th>
+                <th className="py-3 px-4">Reported At</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Moderator Decision</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {reports.map((rep) => {
+              {reports.map((rep, index) => {
                 const listing = rep.listingId || {};
                 return (
                   <tr key={rep._id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4 font-semibold text-slate-500">{index + 1}</td>
                     <td className="py-3.5 px-4 min-w-[200px]">
                       {listing.title ? (
                         <div>
@@ -150,6 +153,10 @@ export default function AdminReports({ onAction }) {
 
                     <td className="py-3.5 px-4">
                       <RiskBadge level={listing.riskLevel || 'Low'} />
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap text-slate-500">
+                      {rep.createdAt ? new Date(rep.createdAt).toLocaleString() : '—'}
                     </td>
 
                     <td className="py-3.5 px-4">

@@ -229,7 +229,7 @@ export default function Header() {
                           className="text-xs font-semibold text-safegreen-700 hover:text-safegreen-800 flex items-center gap-1"
                         >
                           <Check className="w-3.5 h-3.5" />
-                          Mark all read
+                          Mark all as read
                         </button>
                       )}
                     </div>

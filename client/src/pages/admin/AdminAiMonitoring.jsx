@@ -6,6 +6,7 @@ import RiskBadge from '../../components/common/RiskBadge';
 
 export default function AdminAiMonitoring({ onAction }) {
   const [flaggedListings, setFlaggedListings] = useState([]);
+  const [riskCounts, setRiskCounts] = useState({ High: 0, Medium: 0 });
   const [filterLevel, setFilterLevel] = useState('All');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -19,6 +20,7 @@ export default function AdminAiMonitoring({ onAction }) {
       const res = await api.get(`/admin/ai-monitoring?${params.toString()}`);
       if (res.success) {
         setFlaggedListings(res.flaggedListings || []);
+        setRiskCounts(res.riskCounts || { High: 0, Medium: 0 });
       }
     } catch (err) {
       console.error('Failed to load AI monitoring data:', err);
@@ -84,6 +86,15 @@ export default function AdminAiMonitoring({ onAction }) {
             Gemini provides automated risk assessments and flags indicators like advance payment demands or extreme urgency. Administrators investigate and make the final decision to remove fraudulent listings.
           </span>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs font-semibold">
+        <span className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-800">
+          High risk: {riskCounts.High}
+        </span>
+        <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+          Medium risk: {riskCounts.Medium}
+        </span>
       </div>
 
       <div className="space-y-4">
