@@ -236,7 +236,7 @@ export default function ImageUploadPreview({
                     <ListingImage
                       src={src}
                       alt={`Product preview ${index + 1}`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-contain"
                     />
 
                     {/* Gradient Overlay for controls */}
