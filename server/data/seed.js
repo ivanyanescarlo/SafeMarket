@@ -49,14 +49,14 @@ const seedData = async (forceClear = false) => {
 
     // 2. Create Verified Sellers
     const seller1 = await User.create({
-      firstName: 'Maria',
-      lastName: 'Santos',
+      firstName: 'John',
+      lastName: 'Tabadero',
       username: 'maria_seller',
-      email: 'maria@safemarket.ph',
+      email: 'tabadero@gmail.com',
       password: 'Password123!',
       mobileNumber: '+639182345678',
       location: {
-        province: 'Metro Manila (NCR)',
+        province: 'Pangasinan',
         cityMunicipality: 'Quezon City'
       },
       role: 'seller',
@@ -77,15 +77,15 @@ const seedData = async (forceClear = false) => {
     });
 
     const seller2 = await User.create({
-      firstName: 'Juan',
-      lastName: 'Dela Cruz',
-      username: 'juan_tech',
-      email: 'juan@safemarket.ph',
+      firstName: 'Marv',
+      lastName: 'Menor',
+      username: 'Marv',
+      email: 'Menor@gmail.com',
       password: 'Password123!',
       mobileNumber: '+639203456789',
       location: {
-        province: 'Cebu',
-        cityMunicipality: 'Cebu City'
+        province: 'Pangasinan',
+        cityMunicipality: 'Dagupan City'
       },
       role: 'seller',
       status: 'active',
