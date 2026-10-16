@@ -97,6 +97,7 @@ export default function AdminReports({ onAction }) {
               <tr>
                 <th className="py-3 px-4 whitespace-nowrap">Report #</th>
                 <th className="py-3 px-4">Reported Listing</th>
+                <th className="py-3 px-4 whitespace-nowrap">Reports for Item</th>
                 <th className="py-3 px-4">Reason & Explanation</th>
                 <th className="py-3 px-4">Reporter</th>
                 <th className="py-3 px-4">AI Risk Level</th>
@@ -131,6 +132,12 @@ export default function AdminReports({ onAction }) {
                       ) : (
                         <span className="text-slate-400 italic">Listing was removed</span>
                       )}
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 font-bold text-rose-800">
+                        {rep.listingReportCount} {rep.listingReportCount === 1 ? 'report' : 'reports'}
+                      </span>
                     </td>
 
                     <td className="py-3.5 px-4 max-w-xs">
