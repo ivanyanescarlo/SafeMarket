@@ -155,26 +155,28 @@ exports.updateReportStatus = async (req, res) => {
     await report.save();
 
     const listingTitle = report.listingId?.title || 'the listing';
+    const reportContext = `"${listingTitle}" (${report.reason})`;
+    const moderatorNote = adminNotes?.trim() ? ` Moderator note: ${adminNotes.trim()}` : '';
     const reporterNotification = status === 'Dismissed'
       ? {
-          title: 'Report Reviewed: No Violation Found',
-          message: `We reviewed your report about "${listingTitle}" and found no violation. The listing remains active. Thank you for helping keep SafeMarket safe.`
+          title: `Report Reviewed: ${listingTitle}`,
+          message: `We reviewed your report about ${reportContext} and found no violation. The listing remains active.${moderatorNote} Thank you for helping keep SafeMarket safe.`
         }
       : status === 'Resolved' && deactivateListing
       ? {
-          title: 'Report Resolved: Listing Removed',
-          message: `We reviewed your report about "${listingTitle}" and removed the listing. Thank you for helping keep SafeMarket safe.`
+          title: `Report Resolved: ${listingTitle}`,
+          message: `We reviewed your report about ${reportContext} and removed the listing.${moderatorNote} Thank you for helping keep SafeMarket safe.`
         }
       : {
-          title: 'Report Status Updated',
-          message: `Your report regarding "${listingTitle}" has been updated to "${report.status}". Thank you for helping keep SafeMarket secure!`
+          title: `Report Status Updated: ${listingTitle}`,
+          message: `Your report regarding ${reportContext} has been updated to "${report.status}".${moderatorNote} Thank you for helping keep SafeMarket secure!`
         };
 
     await Notification.create({
       recipientId: report.reporterId,
       type: 'report_update',
       ...reporterNotification,
-      link: '/profile'
+      link: '/notifications'
     });
 
     await logActivity({

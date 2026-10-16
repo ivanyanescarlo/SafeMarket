@@ -258,7 +258,8 @@ export default function Header() {
                               key={notif._id}
                               onClick={() => {
                                 if (!notif.read) markAsRead(notif._id);
-                                if (notif.link) navigate(notif.link);
+                                const target = notif.type === 'report_update' ? '/notifications' : notif.link;
+                                if (target) navigate(target);
                                 setNotifOpen(false);
                               }}
                               className={`p-3.5 text-left transition-colors cursor-pointer hover:bg-slate-50 flex items-start gap-3 ${

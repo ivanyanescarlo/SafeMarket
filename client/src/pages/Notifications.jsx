@@ -129,7 +129,8 @@ export default function Notifications() {
                   key={notif._id}
                   onClick={() => {
                     if (!notif.read) markAsRead(notif._id);
-                    if (notif.link) navigate(notif.link);
+                    const target = notif.type === 'report_update' ? '/notifications' : notif.link;
+                    if (target) navigate(target);
                   }}
                   className={`p-5 flex items-start gap-4 transition-colors cursor-pointer hover:bg-slate-50 ${
                     isViolation
