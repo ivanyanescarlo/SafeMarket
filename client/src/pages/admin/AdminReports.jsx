@@ -4,6 +4,9 @@ import { Flag, Eye, ShieldAlert, CheckCircle, XCircle, AlertCircle } from 'lucid
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
 
+const getListingId = (report) =>
+  report.listingId?._id?.toString() || report.listingId?.toString() || '';
+
 export default function AdminReports({ onAction }) {
   const [reports, setReports] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -18,7 +21,17 @@ export default function AdminReports({ onAction }) {
 
       const res = await api.get(`/reports?${params.toString()}`);
       if (res.success) {
-        setReports(res.reports || []);
+        const fetchedReports = res.reports || [];
+        const countsByListing = fetchedReports.reduce((counts, report) => {
+          const listingId = getListingId(report);
+          if (listingId) counts.set(listingId, (counts.get(listingId) || 0) + 1);
+          return counts;
+        }, new Map());
+
+        setReports(fetchedReports.map((report) => ({
+          ...report,
+          listingReportCount: report.listingReportCount ?? countsByListing.get(getListingId(report)) ?? 0
+        })));
       }
     } catch (err) {
       console.error('Failed to load reports:', err);
