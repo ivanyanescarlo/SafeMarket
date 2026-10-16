@@ -42,6 +42,7 @@ exports.createReport = async (req, res) => {
       description: (description || '').trim(),
       status: 'Pending'
     });
+    const reportCount = await Report.countDocuments({ listingId });
 
     await logActivity({
       userId: reporterId,
@@ -62,7 +63,8 @@ exports.createReport = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Report submitted. Our safety team and administrators will review it promptly.',
-      report
+      report,
+      reportCount
     });
   } catch (error) {
     console.error('createReport error:', error);

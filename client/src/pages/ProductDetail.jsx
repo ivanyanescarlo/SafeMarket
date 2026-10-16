@@ -102,7 +102,7 @@ export default function ProductDetail() {
       try {
         const data = await api.get(`/listings/${id}`);
         if (data.success) {
-          setListing(data.listing);
+          setListing({ ...data.listing, reportCount: data.reportCount ?? 0 });
           setOtherListings(data.otherSellerListings || []);
         }
       } catch (err) {
@@ -145,6 +145,13 @@ export default function ProductDetail() {
     } finally {
       setMsgLoading(false);
     }
+  };
+
+  const handleReportSubmitted = (reportCount) => {
+    setListing((current) => current && ({
+      ...current,
+      reportCount: reportCount ?? (current.reportCount || 0) + 1
+    }));
   };
 
   if (loading) {
@@ -490,6 +497,9 @@ export default function ProductDetail() {
                     >
                       <Flag className="w-3.5 h-3.5" />
                       <span>Report Listing</span>
+                      <span className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-rose-100 px-1.5 text-[10px] font-extrabold text-rose-800">
+                        {listing.reportCount || 0}
+                      </span>
                     </button>
 
                     <button
@@ -562,6 +572,7 @@ export default function ProductDetail() {
         onClose={() => setReportModalOpen(false)}
         listingId={listing._id}
         listingTitle={listing.title}
+        onSubmitted={handleReportSubmitted}
       />
     </div>
   );
