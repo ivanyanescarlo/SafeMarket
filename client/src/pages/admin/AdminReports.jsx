@@ -4,9 +4,6 @@ import { Flag, Eye, ShieldAlert, CheckCircle, XCircle, AlertCircle } from 'lucid
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
 
-const getListingId = (report) =>
-  report.listingId?._id?.toString() || report.listingId?.toString() || '';
-
 export default function AdminReports({ onAction }) {
   const [reports, setReports] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -21,17 +18,7 @@ export default function AdminReports({ onAction }) {
 
       const res = await api.get(`/reports?${params.toString()}`);
       if (res.success) {
-        const fetchedReports = res.reports || [];
-        const countsByListing = fetchedReports.reduce((counts, report) => {
-          const listingId = getListingId(report);
-          if (listingId) counts.set(listingId, (counts.get(listingId) || 0) + 1);
-          return counts;
-        }, new Map());
-
-        setReports(fetchedReports.map((report) => ({
-          ...report,
-          listingReportCount: report.listingReportCount ?? countsByListing.get(getListingId(report)) ?? 0
-        })));
+        setReports(res.reports || []);
       }
     } catch (err) {
       console.error('Failed to load reports:', err);
@@ -112,7 +99,6 @@ export default function AdminReports({ onAction }) {
               <tr>
                 <th className="py-3 px-4 whitespace-nowrap">Report #</th>
                 <th className="py-3 px-4">Reported Listing</th>
-                <th className="py-3 px-4 whitespace-nowrap">Reports</th>
                 <th className="py-3 px-4">Reason & Explanation</th>
                 <th className="py-3 px-4">Reporter</th>
                 <th className="py-3 px-4">AI Risk Level</th>
@@ -147,12 +133,6 @@ export default function AdminReports({ onAction }) {
                       ) : (
                         <span className="text-slate-400 italic">Listing was removed</span>
                       )}
-                    </td>
-
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 font-extrabold text-rose-800">
-                        Reports {rep.listingReportCount}
-                      </span>
                     </td>
 
                     <td className="py-3.5 px-4 max-w-xs">

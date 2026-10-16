@@ -98,27 +98,9 @@ exports.getReports = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const listingIds = [...new Map(
-      reports
-        .map((report) => report.listingId?._id)
-        .filter(Boolean)
-        .map((id) => [id.toString(), id])
-    ).values()];
-    const listingReportCounts = await Report.aggregate([
-      { $match: { listingId: { $in: listingIds } } },
-      { $group: { _id: '$listingId', count: { $sum: 1 } } }
-    ]);
-    const reportCountByListing = new Map(
-      listingReportCounts.map(({ _id, count }) => [_id.toString(), count])
-    );
-    const reportsWithCounts = reports.map((report) => ({
-      ...report.toObject(),
-      listingReportCount: reportCountByListing.get(report.listingId?._id?.toString()) || 0
-    }));
-
     res.status(200).json({
       success: true,
-      reports: reportsWithCounts
+      reports
     });
   } catch (error) {
     console.error('getReports error:', error);
