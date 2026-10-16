@@ -18,6 +18,8 @@ export default function ListingCard({ listing }) {
       : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80';
 
   const seller = listing.sellerId || {};
+  const sellerId = seller._id || seller;
+  const isOwner = Boolean(user && sellerId?.toString() === user._id?.toString());
   const formattedPrice = new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -29,6 +31,7 @@ export default function ListingCard({ listing }) {
   const handleCartClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOwner) return;
     if (!user) {
       navigate('/login', { state: { from: { pathname: `/product/${listing._id}` } } });
       return;
@@ -57,20 +60,22 @@ export default function ListingCard({ listing }) {
           <RiskBadge level={listing.riskLevel} size="xs" />
         </div>
 
-        <div className="absolute top-2.5 right-2.5">
-          <button
-            type="button"
-            onClick={handleCartClick}
-            title={inCart ? 'Remove from Cart' : 'Add to Cart'}
-            className={`p-2 rounded-xl transition-all shadow-md flex items-center justify-center ${
-              inCart
-                ? 'bg-safegreen-600 text-white hover:bg-safegreen-700'
-                : 'bg-white/90 backdrop-blur-md text-slate-700 hover:bg-white hover:text-safegreen-700 hover:scale-110'
-            }`}
-          >
-            {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-          </button>
-        </div>
+        {!isOwner && (
+          <div className="absolute top-2.5 right-2.5">
+            <button
+              type="button"
+              onClick={handleCartClick}
+              title={inCart ? 'Remove from Cart' : 'Add to Cart'}
+              className={`p-2 rounded-xl transition-all shadow-md flex items-center justify-center ${
+                inCart
+                  ? 'bg-safegreen-600 text-white hover:bg-safegreen-700'
+                  : 'bg-white/90 backdrop-blur-md text-slate-700 hover:bg-white hover:text-safegreen-700 hover:scale-110'
+              }`}
+            >
+              {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+            </button>
+          </div>
+        )}
 
         <div className="absolute bottom-2.5 left-2.5">
           <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-black/60 text-white backdrop-blur-sm">

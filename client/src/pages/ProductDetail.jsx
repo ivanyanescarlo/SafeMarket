@@ -168,7 +168,8 @@ export default function ProductDetail() {
     ? listing.images
     : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop&q=80'];
 
-  const isOwner = user && user._id === seller._id;
+  const sellerId = seller._id || listing.sellerId;
+  const isOwner = Boolean(user && sellerId?.toString() === user._id?.toString());
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
