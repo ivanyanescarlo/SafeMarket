@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminUsers({ onAction }) {
   const { user: currentUser } = useAuth();
@@ -12,6 +13,7 @@ export default function AdminUsers({ onAction }) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
+  const [blockUser, setBlockUser] = useState(null);
   const [suspensionDuration, setSuspensionDuration] = useState('7');
   const [suspensionUnit, setSuspensionUnit] = useState('day');
   const [suspensionReason, setSuspensionReason] = useState('Policy violation / suspicious activity');
@@ -87,23 +89,19 @@ export default function AdminUsers({ onAction }) {
     }
   };
 
-  const handleBlockUser = async (user) => {
-    const reason = prompt(
-      `This will permanently block @${user.username}. Enter a reason:`,
-      'Permanent violation / severe policy breach'
-    );
-    if (reason === null) return;
-
-    setActionLoading(user._id);
+  const confirmBlockUser = async (reason) => {
+    if (!blockUser) return;
+    setActionLoading(blockUser._id);
     try {
-      await api.put(`/admin/users/${user._id}/status`, {
+      await api.put(`/admin/users/${blockUser._id}/status`, {
         status: 'blocked',
         reason
       });
+      setBlockUser(null);
       fetchUsers();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to block user.');
+      throw new Error(err.message || 'Failed to block user.');
     } finally {
       setActionLoading(null);
     }
@@ -274,7 +272,7 @@ export default function AdminUsers({ onAction }) {
                           <button
                             type="button"
                             disabled={actionLoading === u._id}
-                            onClick={() => handleBlockUser(u)}
+                            onClick={() => setBlockUser(u)}
                             className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
                           >
                             Block
@@ -293,7 +291,7 @@ export default function AdminUsers({ onAction }) {
                           <button
                             type="button"
                             disabled={actionLoading === u._id}
-                            onClick={() => handleBlockUser(u)}
+                            onClick={() => setBlockUser(u)}
                             className="px-3 py-1 rounded-lg text-xs font-bold transition-colors bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
                           >
                             Block
@@ -398,6 +396,18 @@ export default function AdminUsers({ onAction }) {
             </div>
           </form>
         </div>
+      )}
+
+      {blockUser && (
+        <ReasonActionModal
+          key={blockUser._id}
+          title={`Block @${blockUser.username}`}
+          description="This permanently blocks the account. Add the reason that will be recorded for this action."
+          initialReason="Permanent violation / severe policy breach"
+          confirmLabel="Confirm Block"
+          onCancel={() => setBlockUser(null)}
+          onConfirm={confirmBlockUser}
+        />
       )}
 
     </div>

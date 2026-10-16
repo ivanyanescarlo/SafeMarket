@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { Flag, Eye, ShieldAlert, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminReports({ onAction }) {
   const [reports, setReports] = useState([]);
   const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [reportAction, setReportAction] = useState(null);
 
   const fetchReports = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -33,17 +35,32 @@ export default function AdminReports({ onAction }) {
     return () => clearInterval(refreshInterval);
   }, [statusFilter]);
 
-  const handleResolve = async (reportId, newStatus, shouldDeactivate) => {
-    const adminNotes = prompt(
-      `Enter admin notes / explanation for status: ${newStatus}:`,
-      shouldDeactivate
+  const handleResolve = (reportId, newStatus, shouldDeactivate) => {
+    const listingTitle = reports.find((report) => report._id === reportId)?.listingId?.title || 'this listing';
+    const isNoViolation = newStatus === 'Dismissed';
+    setReportAction({
+      reportId,
+      newStatus,
+      shouldDeactivate,
+      title: isNoViolation ? 'Mark Report: No Violation' : shouldDeactivate ? 'Take Down Listing' : 'Reopen Report',
+      description: isNoViolation
+        ? `Confirm that no violation was found for "${listingTitle}". The listing will remain active.`
+        : shouldDeactivate
+        ? `Confirm removal of "${listingTitle}" from the marketplace.`
+        : `Reopen the report for "${listingTitle}" for further review.`,
+      confirmLabel: isNoViolation ? 'Confirm No Violation' : shouldDeactivate ? 'Confirm Takedown' : 'Reopen Report',
+      confirmClassName: isNoViolation ? 'bg-slate-700 hover:bg-slate-800' : 'bg-rose-600 hover:bg-rose-700',
+      initialReason: shouldDeactivate
         ? 'Confirmed scam / fraudulent listing removed upon investigation'
-        : newStatus === 'Dismissed'
+        : isNoViolation
         ? 'Reviewed; no violation found. Listing remains active.'
-        : 'Reviewed and confirmed compliant'
-    );
-    if (adminNotes === null) return;
+        : 'Report reopened for further review.'
+    });
+  };
 
+  const confirmReportAction = async (adminNotes) => {
+    if (!reportAction) return;
+    const { reportId, newStatus, shouldDeactivate } = reportAction;
     setActionLoading(reportId);
     try {
       await api.put(`/reports/${reportId}/status`, {
@@ -51,10 +68,11 @@ export default function AdminReports({ onAction }) {
         adminNotes,
         deactivateListing: shouldDeactivate
       });
+      setReportAction(null);
       fetchReports();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to update report status.');
+      throw new Error(err.message || 'Failed to update report status.');
     } finally {
       setActionLoading(null);
     }
@@ -223,6 +241,20 @@ export default function AdminReports({ onAction }) {
           </table>
         )}
       </div>
+
+      {reportAction && (
+        <ReasonActionModal
+          key={`${reportAction.reportId}-${reportAction.newStatus}`}
+          title={reportAction.title}
+          description={reportAction.description}
+          initialReason={reportAction.initialReason}
+          reasonLabel="Moderator notes"
+          confirmLabel={reportAction.confirmLabel}
+          confirmClassName={reportAction.confirmClassName}
+          onCancel={() => setReportAction(null)}
+          onConfirm={confirmReportAction}
+        />
+      )}
 
     </div>
   );

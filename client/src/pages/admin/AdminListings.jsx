@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Trash2, CheckCircle, ShieldAlert, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminListings({ onAction }) {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function AdminListings({ onAction }) {
   const [riskFilter, setRiskFilter] = useState('All');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [takeDownListing, setTakeDownListing] = useState(null);
 
   const fetchListings = async () => {
     setLoading(true);
@@ -41,28 +43,19 @@ export default function AdminListings({ onAction }) {
     fetchListings();
   };
 
-  const handleModerate = async (listing, newStatus) => {
-    let reason = '';
-    if (newStatus === 'removed') {
-      reason = prompt(
-        'Reason for taking down this listing:',
-        'Violated SafeMarket scam prevention policies / advance deposit request'
-      );
-      if (reason === null) return;
-    } else {
-      if (!confirm(`Set status of "${listing.title}" to ${newStatus}?`)) return;
-    }
-
-    setActionLoading(listing._id);
+  const confirmTakeDown = async (reason) => {
+    if (!takeDownListing) return;
+    setActionLoading(takeDownListing._id);
     try {
-      await api.put(`/admin/listings/${listing._id}/moderate`, {
-        status: newStatus,
+      await api.put(`/admin/listings/${takeDownListing._id}/moderate`, {
+        status: 'removed',
         removalReason: reason
       });
+      setTakeDownListing(null);
       fetchListings();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to moderate listing.');
+      throw new Error(err.message || 'Failed to take down listing.');
     } finally {
       setActionLoading(null);
     }
@@ -200,7 +193,7 @@ export default function AdminListings({ onAction }) {
                         disabled={actionLoading === item._id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleModerate(item, 'removed');
+                          setTakeDownListing(item);
                         }}
                         className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold border border-rose-200"
                       >
@@ -217,6 +210,17 @@ export default function AdminListings({ onAction }) {
         )}
       </div>
 
+      {takeDownListing && (
+        <ReasonActionModal
+          key={takeDownListing._id}
+          title="Take Down Listing"
+          description={`Remove "${takeDownListing.title}" from the marketplace.`}
+          initialReason="Violated SafeMarket scam prevention policies / advance deposit request"
+          confirmLabel="Confirm Takedown"
+          onCancel={() => setTakeDownListing(null)}
+          onConfirm={confirmTakeDown}
+        />
+      )}
     </div>
   );
 }

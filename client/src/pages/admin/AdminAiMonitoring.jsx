@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, ShieldAlert, AlertTriangle, Eye, CheckCircle, Ban } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminAiMonitoring({ onAction }) {
   const [flaggedListings, setFlaggedListings] = useState([]);
@@ -10,6 +11,7 @@ export default function AdminAiMonitoring({ onAction }) {
   const [filterLevel, setFilterLevel] = useState('All');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [takeDownListing, setTakeDownListing] = useState(null);
 
   const fetchAiData = async () => {
     setLoading(true);
@@ -33,23 +35,19 @@ export default function AdminAiMonitoring({ onAction }) {
     fetchAiData();
   }, [filterLevel]);
 
-  const handleTakeDown = async (item) => {
-    const reason = prompt(
-      `Enter reason for taking down "${item.title}":`,
-      'Flagged as scam by Gemini AI risk analyzer (Advance deposit / unrealistic terms)'
-    );
-    if (reason === null) return;
-
-    setActionLoading(item._id);
+  const confirmTakeDown = async (reason) => {
+    if (!takeDownListing) return;
+    setActionLoading(takeDownListing._id);
     try {
-      await api.put(`/admin/listings/${item._id}/moderate`, {
+      await api.put(`/admin/listings/${takeDownListing._id}/moderate`, {
         status: 'removed',
         removalReason: reason
       });
+      setTakeDownListing(null);
       fetchAiData();
       if (onAction) onAction();
     } catch (err) {
-      alert(err.message || 'Failed to moderate listing.');
+      throw new Error(err.message || 'Failed to take down listing.');
     } finally {
       setActionLoading(null);
     }
@@ -164,7 +162,7 @@ export default function AdminAiMonitoring({ onAction }) {
                     <button
                       type="button"
                       disabled={actionLoading === item._id}
-                      onClick={() => handleTakeDown(item)}
+                      onClick={() => setTakeDownListing(item)}
                       className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs"
                     >
                       Takedown Item
@@ -198,6 +196,17 @@ export default function AdminAiMonitoring({ onAction }) {
         )}
       </div>
 
+      {takeDownListing && (
+        <ReasonActionModal
+          key={takeDownListing._id}
+          title="Take Down Listing"
+          description={`Remove "${takeDownListing.title}" from the marketplace after AI risk review.`}
+          initialReason="Flagged by the AI risk analyzer (advance deposit / unrealistic terms)"
+          confirmLabel="Confirm Takedown"
+          onCancel={() => setTakeDownListing(null)}
+          onConfirm={confirmTakeDown}
+        />
+      )}
     </div>
   );
 }
