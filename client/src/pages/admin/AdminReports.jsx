@@ -7,7 +7,7 @@ import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminReports({ onAction }) {
   const [reports, setReports] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('Pending');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [reportAction, setReportAction] = useState(null);
@@ -42,19 +42,17 @@ export default function AdminReports({ onAction }) {
       reportId,
       newStatus,
       shouldDeactivate,
-      title: isNoViolation ? 'Mark Report: No Violation' : shouldDeactivate ? 'Take Down Listing' : 'Reopen Report',
+      title: isNoViolation ? 'Mark Report: No Violation' : 'Take Down Listing',
       description: isNoViolation
         ? `Confirm that no violation was found for "${listingTitle}". The listing will remain active.`
-        : shouldDeactivate
-        ? `Confirm removal of "${listingTitle}" from the marketplace.`
-        : `Reopen the report for "${listingTitle}" for further review.`,
-      confirmLabel: isNoViolation ? 'Confirm No Violation' : shouldDeactivate ? 'Confirm Takedown' : 'Reopen Report',
+        : `Confirm removal of "${listingTitle}" from the marketplace.`,
+      confirmLabel: isNoViolation ? 'Confirm No Violation' : 'Confirm Takedown',
       confirmClassName: isNoViolation ? 'bg-slate-700 hover:bg-slate-800' : 'bg-rose-600 hover:bg-rose-700',
       initialReason: shouldDeactivate
         ? 'Confirmed scam / fraudulent listing removed upon investigation'
         : isNoViolation
         ? 'Reviewed; no violation found. Listing remains active.'
-        : 'Report reopened for further review.'
+        : 'Confirmed scam / fraudulent listing removed upon investigation'
     });
   };
 
@@ -94,7 +92,6 @@ export default function AdminReports({ onAction }) {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
         >
-          <option value="All">All Statuses</option>
           <option value="Pending">Pending Review</option>
           <option value="Reviewed">Reviewed</option>
           <option value="Resolved">Resolved</option>
@@ -223,16 +220,6 @@ export default function AdminReports({ onAction }) {
                         </>
                       )}
 
-                      {rep.status !== 'Pending' && (
-                        <button
-                          type="button"
-                          disabled={actionLoading === rep._id}
-                          onClick={() => handleResolve(rep._id, 'Pending', false)}
-                          className="text-xs font-semibold text-safegreen-700 hover:underline"
-                        >
-                          Reopen
-                        </button>
-                      )}
                     </td>
                   </tr>
                 );

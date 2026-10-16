@@ -35,6 +35,9 @@ export const NotificationProvider = ({ children }) => {
       // 1. Fetch system, message & violation notifications
       const data = await api.get('/notifications');
       let cleanNotifs = (data.notifications || []);
+      if (user.role !== 'seller') {
+        cleanNotifs = cleanNotifs.filter((notification) => notification.type !== 'violation');
+      }
 
       // If user is Admin, fetch pending reports & high risk AI items for Admin notifications
       if (user.role === 'admin') {

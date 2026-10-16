@@ -12,9 +12,11 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Notifications() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { isSeller } = useAuth();
   const [filter, setFilter] = useState('all'); // 'all' | 'violations'
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,17 +105,19 @@ export default function Notifications() {
           >
             All Notifications ({notifications.length})
           </button>
-          <button
-            onClick={() => setFilter('violations')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1.5 ${
-              filter === 'violations'
-                ? 'bg-rose-600 text-white shadow-xs'
-                : 'text-rose-700 hover:bg-rose-50'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Violations & Warnings ({violationCount})</span>
-          </button>
+          {isSeller && (
+            <button
+              onClick={() => setFilter('violations')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1.5 ${
+                filter === 'violations'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Violations & Warnings ({violationCount})</span>
+            </button>
+          )}
         </div>
 
         {/* List */}

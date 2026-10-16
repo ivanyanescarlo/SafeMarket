@@ -10,7 +10,6 @@ import {
   Share2,
   Calendar,
   Eye,
-  CheckCircle2,
   Sparkles,
   ArrowLeft,
   UserCheck,
@@ -71,26 +70,6 @@ export default function ProductDetail() {
       }
     } catch (err) {
       alert(err.message || 'Failed to take down listing.');
-    } finally {
-      setAdminActionLoading(false);
-    }
-  };
-
-  const handleAdminDismiss = async () => {
-    if (!confirm(`Dismiss reports and approve listing "${listing.title}"?`)) return;
-
-    setAdminActionLoading(true);
-    try {
-      const res = await api.put(`/admin/listings/${listing._id}/moderate`, {
-        status: 'active',
-        removalReason: ''
-      });
-      if (res.success) {
-        alert('Listing reports dismissed and status approved as Active.');
-        setListing((prev) => ({ ...prev, status: 'active', removalReason: '' }));
-      }
-    } catch (err) {
-      alert(err.message || 'Failed to approve listing.');
     } finally {
       setAdminActionLoading(false);
     }
@@ -412,7 +391,7 @@ export default function ProductDetail() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 gap-2.5">
                     <button
                       type="button"
                       disabled={adminActionLoading || listing.status === 'removed'}
@@ -423,15 +402,6 @@ export default function ProductDetail() {
                       <span>{listing.status === 'removed' ? 'Already Taken Down' : 'Take Down Listing'}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      disabled={adminActionLoading || listing.status === 'active'}
-                      onClick={handleAdminDismiss}
-                      className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Dismiss & Approve</span>
-                    </button>
                   </div>
 
                   <Link

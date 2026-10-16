@@ -472,7 +472,7 @@ exports.moderateListing = async (req, res) => {
  */
 exports.getAiMonitoring = async (req, res) => {
   try {
-    const { riskLevel = 'High' } = req.query;
+    const { riskLevel = 'All' } = req.query;
     const query = { status: 'active' };
 
     if (riskLevel && riskLevel !== 'All') {
