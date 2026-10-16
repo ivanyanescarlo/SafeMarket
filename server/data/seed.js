@@ -16,15 +16,33 @@ const seedData = async (forceClear = false) => {
   try {
     const userCount = await User.countDocuments();
     if (!forceClear && userCount > 0) {
-      const updateSeededSeller = async (legacyEmail, updates) => {
-        const user = await User.findOne({ email: legacyEmail });
-        if (!user) return false;
+      const updateSeededSeller = async (legacyEmail, legacyUsername, updates) => {
+        const [userByEmail, userByUsername] = await Promise.all([
+          User.findOne({ email: legacyEmail }),
+          User.findOne({ username: legacyUsername })
+        ]);
+        if (userByEmail && userByUsername && !userByEmail._id.equals(userByUsername._id)) {
+          console.warn(`[Seed] Skipped ${legacyEmail}: legacy email and username belong to different users.`);
+          return false;
+        }
+
+        const user = userByEmail || userByUsername;
+        if (!user) {
+          console.warn(`[Seed] No existing sample seller matched ${legacyEmail} or ${legacyUsername}.`);
+          return false;
+        }
+
+        const normalizedUpdates = {
+          ...updates,
+          email: updates.email.toLowerCase(),
+          username: (updates.username || user.username).toLowerCase()
+        };
 
         const conflictingUser = await User.exists({
           _id: { $ne: user._id },
           $or: [
-            { email: updates.email },
-            { username: updates.username || user.username }
+            { email: normalizedUpdates.email },
+            { username: normalizedUpdates.username }
           ]
         });
         if (conflictingUser) {
@@ -32,19 +50,19 @@ const seedData = async (forceClear = false) => {
           return false;
         }
 
-        user.set(updates);
+        user.set(normalizedUpdates);
         await user.save();
         return true;
       };
 
       const updatedSellers = await Promise.all([
-        updateSeededSeller('maria@safemarket.ph', {
+        updateSeededSeller('maria@safemarket.ph', 'maria_seller', {
           firstName: 'John',
           lastName: 'Tabadero',
           email: 'tabadero@gmail.com',
           location: { province: 'Pangasinan', cityMunicipality: 'Quezon City' }
         }),
-        updateSeededSeller('juan@safemarket.ph', {
+        updateSeededSeller('juan@safemarket.ph', 'juan_tech', {
           firstName: 'Marv',
           lastName: 'Menor',
           username: 'marv',
