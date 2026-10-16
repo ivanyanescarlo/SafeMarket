@@ -21,7 +21,7 @@ const canCacheGetRequest = (method, endpoint) => {
   const path = endpoint.split('?')[0];
   if (
     method !== 'GET' ||
-    ['/auth', '/messages', '/notifications', '/admin'].some((prefix) => path.startsWith(prefix))
+    ['/auth', '/messages', '/notifications', '/admin', '/reports'].some((prefix) => path.startsWith(prefix))
   ) {
     return false;
   }

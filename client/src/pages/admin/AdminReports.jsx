@@ -10,8 +10,8 @@ export default function AdminReports({ onAction }) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchReports = async () => {
-    setLoading(true);
+  const fetchReports = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const params = new URLSearchParams();
       if (statusFilter !== 'All') params.set('status', statusFilter);
@@ -23,12 +23,14 @@ export default function AdminReports({ onAction }) {
     } catch (err) {
       console.error('Failed to load reports:', err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchReports();
+    const refreshInterval = setInterval(() => fetchReports(false), 5000);
+    return () => clearInterval(refreshInterval);
   }, [statusFilter]);
 
   const handleResolve = async (reportId, newStatus, shouldDeactivate) => {
