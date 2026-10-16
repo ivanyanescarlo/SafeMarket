@@ -531,7 +531,7 @@ exports.getLogs = async (req, res) => {
     if (after) {
       query.createdAt = {
         ...(query.createdAt || {}),
-        $gt: new Date(after)
+        $gte: new Date(after)
       };
     }
 
