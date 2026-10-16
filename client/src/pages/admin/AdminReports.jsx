@@ -38,6 +38,8 @@ export default function AdminReports({ onAction }) {
       `Enter admin notes / explanation for status: ${newStatus}:`,
       shouldDeactivate
         ? 'Confirmed scam / fraudulent listing removed upon investigation'
+        : newStatus === 'Dismissed'
+        ? 'Reviewed; no violation found. Listing remains active.'
         : 'Reviewed and confirmed compliant'
     );
     if (adminNotes === null) return;
@@ -78,7 +80,7 @@ export default function AdminReports({ onAction }) {
           <option value="Pending">Pending Review</option>
           <option value="Reviewed">Reviewed</option>
           <option value="Resolved">Resolved</option>
-          <option value="Dismissed">Dismissed</option>
+          <option value="Dismissed">No Violation</option>
         </select>
       </div>
 
@@ -175,7 +177,7 @@ export default function AdminReports({ onAction }) {
                             : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        {rep.status}
+                        {rep.status === 'Dismissed' ? 'No Violation' : rep.status}
                       </span>
                     </td>
 
@@ -195,10 +197,10 @@ export default function AdminReports({ onAction }) {
                             type="button"
                             disabled={actionLoading === rep._id}
                             onClick={() => handleResolve(rep._id, 'Dismissed', false)}
-                            title="Dismiss false report"
+                            title="Mark the report as reviewed with no violation; keep listing active"
                             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold"
                           >
-                            Dismiss
+                            No Violation
                           </button>
                         </>
                       )}

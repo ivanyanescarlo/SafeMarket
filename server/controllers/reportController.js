@@ -154,12 +154,26 @@ exports.updateReportStatus = async (req, res) => {
 
     await report.save();
 
-    // Notify reporter that report was resolved
+    const listingTitle = report.listingId?.title || 'the listing';
+    const reporterNotification = status === 'Dismissed'
+      ? {
+          title: 'Report Reviewed: No Violation Found',
+          message: `We reviewed your report about "${listingTitle}" and found no violation. The listing remains active. Thank you for helping keep SafeMarket safe.`
+        }
+      : status === 'Resolved' && deactivateListing
+      ? {
+          title: 'Report Resolved: Listing Removed',
+          message: `We reviewed your report about "${listingTitle}" and removed the listing. Thank you for helping keep SafeMarket safe.`
+        }
+      : {
+          title: 'Report Status Updated',
+          message: `Your report regarding "${listingTitle}" has been updated to "${report.status}". Thank you for helping keep SafeMarket secure!`
+        };
+
     await Notification.create({
       recipientId: report.reporterId,
       type: 'report_update',
-      title: 'Report Status Updated',
-      message: `Your report regarding listing has been updated to "${report.status}". Thank you for helping keep SafeMarket secure!`,
+      ...reporterNotification,
       link: '/profile'
     });
 
