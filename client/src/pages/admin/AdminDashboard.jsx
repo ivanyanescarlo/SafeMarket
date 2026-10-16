@@ -253,12 +253,8 @@ export default function AdminDashboard() {
 
                   <div className="flex items-end justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Volume</div>
-                      <div className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">{(trendData.reduce((sum, item) => sum + (item.listings || 0), 0) || 0)}</div>
-                    </div>
-                    <div className="text-right">
                       <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">Users</div>
-                      <div className="mt-1 text-lg font-bold text-safegreen-600">{(trendData.reduce((sum, item) => sum + (item.users || 0), 0) || 0)}</div>
+                      <div className="mt-1 text-2xl font-black text-safegreen-600">{(trendData.reduce((sum, item) => sum + (item.users || 0), 0) || 0)}</div>
                     </div>
                   </div>
 

@@ -95,7 +95,7 @@ export default function AdminReports({ onAction }) {
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">No.</th>
+                <th className="py-3 px-4 whitespace-nowrap">Report #</th>
                 <th className="py-3 px-4">Reported Listing</th>
                 <th className="py-3 px-4">Reason & Explanation</th>
                 <th className="py-3 px-4">Reporter</th>
@@ -110,7 +110,11 @@ export default function AdminReports({ onAction }) {
                 const listing = rep.listingId || {};
                 return (
                   <tr key={rep._id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-4 font-semibold text-slate-500">{index + 1}</td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="inline-flex items-center rounded-md border border-safegreen-200 bg-safegreen-50 px-2.5 py-1 font-bold text-safegreen-800">
+                        Report #{index + 1}
+                      </span>
+                    </td>
                     <td className="py-3.5 px-4 min-w-[200px]">
                       {listing.title ? (
                         <div>
