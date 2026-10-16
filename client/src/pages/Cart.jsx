@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import RiskBadge from '../components/common/RiskBadge';
 import api from '../services/api';
+import ListingImage from '../components/common/ListingImage';
 
 export default function Cart() {
   const { cart, removeFromCart, clearCart, markCartAsSeen } = useCart();
@@ -132,9 +133,7 @@ export default function Cart() {
                 maximumFractionDigits: 0
               }).format(item.price || 0);
 
-              const image = item.images && item.images.length > 0
-                ? item.images[0]
-                : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400';
+              const image = item.images?.find(Boolean);
 
               return (
                 <div
@@ -142,7 +141,7 @@ export default function Cart() {
                   className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
                 >
                   <div className="flex gap-4 items-center">
-                    <img
+                    <ListingImage
                       src={image}
                       alt={item.title}
                       className="w-20 h-20 rounded-xl object-cover border border-slate-200 flex-shrink-0"

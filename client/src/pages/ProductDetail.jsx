@@ -22,6 +22,7 @@ import { useCart } from '../context/CartContext';
 import RiskWarningBanner from '../components/listing/RiskWarningBanner';
 import GoogleSearchSources from '../components/listing/GoogleSearchSources';
 import ReportModal from '../components/common/ReportModal';
+import ListingImage from '../components/common/ListingImage';
 import ListingCard from '../components/listing/ListingCard';
 
 export default function ProductDetail() {
@@ -164,9 +165,7 @@ export default function ProductDetail() {
     maximumFractionDigits: 0
   }).format(listing.price || 0);
 
-  const images = listing.images && listing.images.length > 0
-    ? listing.images
-    : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop&q=80'];
+  const images = listing.images?.filter(Boolean) || [];
 
   const sellerId = seller._id || listing.sellerId;
   const isOwner = Boolean(user && sellerId?.toString() === user._id?.toString());
@@ -190,7 +189,7 @@ export default function ProductDetail() {
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm relative">
-            <img
+            <ListingImage
               src={images[activeImageIdx]}
               alt={listing.title}
               className="w-full h-full object-cover"
@@ -213,7 +212,7 @@ export default function ProductDetail() {
                       : 'border-slate-200 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <ListingImage src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

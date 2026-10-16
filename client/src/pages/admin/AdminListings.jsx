@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Trash2, CheckCircle, ShieldAlert, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ListingImage from '../../components/common/ListingImage';
 import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminListings({ onAction }) {
@@ -139,8 +140,8 @@ export default function AdminListings({ onAction }) {
                   className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                 >
                   <td className="py-3 px-4 flex items-center gap-3">
-                    <img
-                      src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                    <ListingImage
+                      src={item.images?.[0]}
                       alt=""
                       className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                     />

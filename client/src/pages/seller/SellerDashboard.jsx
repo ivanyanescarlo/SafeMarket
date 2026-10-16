@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import ListingImage from '../../components/common/ListingImage';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
@@ -342,8 +343,8 @@ export default function SellerDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredSoldListings.map((item) => (
                 <div key={item._id} className="flex items-center gap-3 p-3.5 border border-slate-200/70 rounded-2xl bg-slate-50/50 hover:bg-slate-100/80 transition-all group">
-                  <img
-                    src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                  <ListingImage
+                    src={item.images?.[0]}
                     alt=""
                     className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-slate-200"
                   />
@@ -399,8 +400,8 @@ export default function SellerDashboard() {
               {myListings.slice(0, 5).map((item) => (
                 <div key={item._id} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                    <ListingImage
+                      src={item.images?.[0]}
                       alt=""
                       className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                     />

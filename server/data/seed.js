@@ -349,6 +349,50 @@ const seedData = async (forceClear = false) => {
         recommendation: 'Test ride the bicycle, inspect gear shifting, and examine the frame for cracks before completing payment.',
         status: 'active',
         views: 47
+      },
+      {
+        sellerId: seller1._id,
+        title: 'Logitech MX Master 3S Wireless Mouse',
+        description: 'Pre-loved MX Master 3S in excellent working condition. Quiet clicks, responsive scroll wheel, and USB-C charging. Includes the original Logi Bolt receiver. Meet up in Quezon City.',
+        price: 4200,
+        category: 'Computers & Laptops',
+        condition: 'Lightly Used',
+        images: ['https://images.unsplash.com/photo-1527814050087-3793815479db?w=800&auto=format&fit=crop&q=80'],
+        brand: 'Logitech',
+        model: 'MX Master 3S',
+        itemAge: '8 months',
+        location: {
+          province: 'Metro Manila (NCR)',
+          cityMunicipality: 'Quezon City'
+        },
+        riskLevel: 'Low',
+        riskIndicators: ['Clear item details and a reasonable second-hand price'],
+        riskSummary: 'A straightforward used computer accessory listing.',
+        recommendation: 'Test the buttons, scroll wheel, and Bluetooth connection at meetup.',
+        status: 'active',
+        views: 0
+      },
+      {
+        sellerId: seller2._id,
+        title: 'Lenovo ThinkPad X1 Carbon Laptop (16GB RAM, 512GB SSD)',
+        description: 'Reliable ThinkPad X1 Carbon with 16GB RAM and a 512GB SSD. Keyboard, trackpad, webcam, and ports are working. Includes the original USB-C charger. Cebu City meetup and in-person testing welcome.',
+        price: 38500,
+        category: 'Computers & Laptops',
+        condition: 'Lightly Used',
+        images: ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&auto=format&fit=crop&q=80'],
+        brand: 'Lenovo',
+        model: 'ThinkPad X1 Carbon',
+        itemAge: '1 year',
+        location: {
+          province: 'Cebu',
+          cityMunicipality: 'Cebu City'
+        },
+        riskLevel: 'Low',
+        riskIndicators: ['Specifications, included charger, and public meetup are stated'],
+        riskSummary: 'A detailed laptop listing with a standard face-to-face transaction.',
+        recommendation: 'Check the battery health, keyboard, screen, and ports before purchase.',
+        status: 'active',
+        views: 0
       }
     ];
 

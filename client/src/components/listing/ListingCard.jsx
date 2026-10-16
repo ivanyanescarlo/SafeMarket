@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Star, ShoppingCart, Check } from 'lucide-react';
 import RiskBadge from '../common/RiskBadge';
+import ListingImage from '../common/ListingImage';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -12,10 +13,7 @@ export default function ListingCard({ listing }) {
 
   if (!listing) return null;
 
-  const imageSrc =
-    listing.images && listing.images.length > 0 && listing.images[0]
-      ? listing.images[0]
-      : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80';
+  const imageSrc = listing.images?.find(Boolean);
 
   const seller = listing.sellerId || {};
   const sellerId = seller._id || seller;
@@ -50,7 +48,7 @@ export default function ListingCard({ listing }) {
     >
       {/* Thumbnail with Risk Badge & Quick Save overlay */}
       <div className="relative aspect-[4/3] w-full bg-slate-100 overflow-hidden">
-        <img
+        <ListingImage
           src={imageSrc}
           alt={listing.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

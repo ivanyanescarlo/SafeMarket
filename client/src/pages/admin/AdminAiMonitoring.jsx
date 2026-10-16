@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, ShieldAlert, AlertTriangle, Eye, CheckCircle, Ban } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ListingImage from '../../components/common/ListingImage';
 import ReasonActionModal from '../../components/common/ReasonActionModal';
 
 export default function AdminAiMonitoring({ onAction }) {
@@ -119,8 +120,8 @@ export default function AdminAiMonitoring({ onAction }) {
               <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                 
                 <div className="flex items-start gap-4">
-                  <img
-                    src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                  <ListingImage
+                    src={item.images?.[0]}
                     alt=""
                     className="w-16 h-16 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                   />

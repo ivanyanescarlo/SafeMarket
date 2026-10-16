@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import RiskBadge from '../../components/common/RiskBadge';
+import ListingImage from '../../components/common/ListingImage';
 
 export default function MyListings() {
   const [listings, setListings] = useState([]);
@@ -122,8 +123,8 @@ export default function MyListings() {
                 {listings.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4 flex items-center gap-3">
-                      <img
-                        src={item.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                      <ListingImage
+                        src={item.images?.[0]}
                         alt=""
                         className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0"
                       />
