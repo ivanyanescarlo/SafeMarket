@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import safeMarketLogo from '../assets/safemarket_logo.png';
 
@@ -11,6 +11,8 @@ export default function NewPassword() {
   const token = sessionStorage.getItem('passwordResetToken') || '';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -67,35 +69,55 @@ export default function NewPassword() {
               <label htmlFor="new-password" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 New Password
               </label>
-              <input
-                id="new-password"
-                type="password"
-                maxLength={50}
-                value={password}
-                onChange={(event) => setPassword(event.target.value.replace(/\s/g, ''))}
-                autoComplete="new-password"
-                minLength={8}
-                required
-                placeholder="Enter new password"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
-              />
+              <div className="relative">
+                <input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  maxLength={50}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value.replace(/\s/g, ''))}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  placeholder="Enter new password"
+                  className="w-full px-3.5 py-2.5 pr-11 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Hide new password' : 'Show new password'}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-800"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label htmlFor="confirm-password" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 Confirm New Password
               </label>
-              <input
-                id="confirm-password"
-                type="password"
-                maxLength={50}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value.replace(/\s/g, ''))}
-                autoComplete="new-password"
-                minLength={8}
-                required
-                placeholder="Confirm your new password"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
-              />
+              <div className="relative">
+                <input
+                  id="confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  maxLength={50}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value.replace(/\s/g, ''))}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  placeholder="Confirm your new password"
+                  className="w-full px-3.5 py-2.5 pr-11 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((visible) => !visible)}
+                  aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-800"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <button
               type="submit"
