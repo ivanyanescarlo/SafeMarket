@@ -49,9 +49,9 @@ export default function Messages() {
       if (data.success) {
         setConversations(data.conversations || []);
 
-        // Default to first conversation if none selected
-        if (!activeConvId && data.conversations?.length > 0) {
-          setActiveConvId(data.conversations[0]._id);
+        // Default to the first conversation only if none is currently selected.
+        if (data.conversations?.length > 0) {
+          setActiveConvId((currentId) => currentId || data.conversations[0]._id);
         }
       }
     } catch (err) {
