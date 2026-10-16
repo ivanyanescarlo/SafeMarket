@@ -120,7 +120,14 @@ exports.updateReportStatus = async (req, res) => {
     const { id } = req.params;
     const { status, adminNotes, deactivateListing } = req.body;
 
-    const report = await Report.findById(id).populate('listingId');
+    const report = await Report.findById(id).populate({
+      path: 'listingId',
+      select: 'title sellerId',
+      populate: {
+        path: 'sellerId',
+        select: 'firstName lastName username'
+      }
+    });
     if (!report) {
       return res.status(404).json({
         success: false,
@@ -154,28 +161,35 @@ exports.updateReportStatus = async (req, res) => {
 
     await report.save();
 
-    const listingTitle = report.listingId?.title || 'the listing';
-    const reportContext = `"${listingTitle}" (${report.reason})`;
-    const moderatorNote = adminNotes?.trim() ? ` Moderator note: ${adminNotes.trim()}` : '';
-    const reporterNotification = status === 'Dismissed'
-      ? {
-          title: `Report Reviewed: ${listingTitle}`,
-          message: `We reviewed your report about ${reportContext} and found no violation. The listing remains active.${moderatorNote} Thank you for helping keep SafeMarket safe.`
-        }
+    const listingTitle = report.listingId?.title || 'Listing details unavailable';
+    const seller = report.listingId?.sellerId;
+    const sellerName = [seller?.firstName, seller?.lastName].filter(Boolean).join(' ') || 'Seller details unavailable';
+    const sellerDetails = seller?.username ? `${sellerName} (@${seller.username})` : sellerName;
+    const outcome = status === 'Dismissed'
+      ? 'No violation was found. The listing remains active.'
       : status === 'Resolved' && deactivateListing
-      ? {
-          title: `Report Resolved: ${listingTitle}`,
-          message: `We reviewed your report about ${reportContext} and removed the listing.${moderatorNote} Thank you for helping keep SafeMarket safe.`
-        }
-      : {
-          title: `Report Status Updated: ${listingTitle}`,
-          message: `Your report regarding ${reportContext} has been updated to "${report.status}".${moderatorNote} Thank you for helping keep SafeMarket secure!`
-        };
+      ? 'The report was confirmed. The listing was removed.'
+      : `The report status is now ${report.status}.`;
+    const reportedAt = new Intl.DateTimeFormat('en-PH', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Asia/Manila'
+    }).format(report.createdAt);
+    const notificationDetails = [
+      `Item reported: ${listingTitle}`,
+      `Seller reported: ${sellerDetails}`,
+      `Reason: ${report.reason}`,
+      report.description ? `Your details: ${report.description}` : null,
+      `Reported on: ${reportedAt}`,
+      `Outcome: ${outcome}`,
+      adminNotes?.trim() ? `Moderator note: ${adminNotes.trim()}` : null
+    ].filter(Boolean).join('\n');
 
     await Notification.create({
       recipientId: report.reporterId,
       type: 'report_update',
-      ...reporterNotification,
+      title: 'Report Status Updated',
+      message: notificationDetails,
       link: '/notifications'
     });
 

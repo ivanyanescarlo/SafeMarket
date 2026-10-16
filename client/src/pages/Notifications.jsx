@@ -167,7 +167,7 @@ export default function Notifications() {
                         })}
                       </span>
                     </div>
-                    <p className={`text-xs mt-1 leading-relaxed ${isViolation ? 'text-rose-900 font-medium' : 'text-slate-600'}`}>
+                    <p className={`text-xs mt-1 leading-relaxed whitespace-pre-line break-words ${isViolation ? 'text-rose-900 font-medium' : 'text-slate-600'}`}>
                       {notif.message}
                     </p>
 
