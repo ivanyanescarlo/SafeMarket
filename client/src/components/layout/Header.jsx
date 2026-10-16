@@ -258,7 +258,9 @@ export default function Header() {
                               key={notif._id}
                               onClick={() => {
                                 if (!notif.read) markAsRead(notif._id);
-                                const target = notif.type === 'report_update' ? '/notifications' : notif.link;
+                                const target = notif.type === 'report_update'
+                                  ? `/notifications?notificationId=${encodeURIComponent(notif._id)}`
+                                  : notif.link;
                                 if (target) navigate(target);
                                 setNotifOpen(false);
                               }}

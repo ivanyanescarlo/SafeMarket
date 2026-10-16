@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Bell,
   Check,
@@ -17,6 +17,23 @@ export default function Notifications() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [filter, setFilter] = useState('all'); // 'all' | 'violations'
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedNotification = notifications.find(
+    (notification) => notification._id === searchParams.get('notificationId')
+  );
+
+  useEffect(() => {
+    if (selectedNotification && !selectedNotification.read) {
+      markAsRead(selectedNotification._id);
+    }
+  }, [selectedNotification, markAsRead]);
+
+  const closeNotificationDetails = () => {
+    setSearchParams((currentParams) => {
+      currentParams.delete('notificationId');
+      return currentParams;
+    }, { replace: true });
+  };
 
   const getIcon = (type) => {
     switch (type) {
@@ -129,7 +146,9 @@ export default function Notifications() {
                   key={notif._id}
                   onClick={() => {
                     if (!notif.read) markAsRead(notif._id);
-                    const target = notif.type === 'report_update' ? '/notifications' : notif.link;
+                    const target = notif.type === 'report_update'
+                      ? `/notifications?notificationId=${encodeURIComponent(notif._id)}`
+                      : notif.link;
                     if (target) navigate(target);
                   }}
                   className={`p-5 flex items-start gap-4 transition-colors cursor-pointer hover:bg-slate-50 ${
@@ -202,6 +221,39 @@ export default function Notifications() {
         </div>
 
       </div>
+
+      {selectedNotification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notification-detail-title"
+            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="notification-detail-title" className="text-base font-bold text-slate-900">
+                  {selectedNotification.title}
+                </h2>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {new Date(selectedNotification.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeNotificationDetails}
+                aria-label="Close notification details"
+                className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-5 whitespace-pre-line break-words rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+              {selectedNotification.message}
+            </p>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

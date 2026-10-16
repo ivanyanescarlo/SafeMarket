@@ -188,7 +188,7 @@ exports.updateReportStatus = async (req, res) => {
     await Notification.create({
       recipientId: report.reporterId,
       type: 'report_update',
-      title: 'Report Status Updated',
+      title: `Report Status Updated: ${listingTitle} (Seller: ${sellerDetails})`,
       message: notificationDetails,
       link: '/notifications'
     });
