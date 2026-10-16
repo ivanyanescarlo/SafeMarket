@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import safeMarketLogo from '../../assets/safemarket_logo.png';
 import AdminUsers from './AdminUsers';
 import AdminListings from './AdminListings';
@@ -45,6 +46,8 @@ const PIE_COLORS = [
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { notifications } = useNotifications();
+  const pendingReportCount = notifications.filter((notification) => notification.type === 'report').length;
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
@@ -160,7 +163,17 @@ export default function AdminDashboard() {
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{tab.label}</span>
+                  <span className="flex-1 text-left">{tab.label}</span>
+                  {tab.id === 'reports' && pendingReportCount > 0 && (
+                    <span
+                      className={`inline-flex min-w-5 h-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                      }`}
+                      aria-label={`${pendingReportCount} pending reports`}
+                    >
+                      {pendingReportCount > 99 ? '99+' : pendingReportCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
