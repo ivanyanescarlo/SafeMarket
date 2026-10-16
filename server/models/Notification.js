@@ -12,6 +12,10 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     },
+    reportId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Report'
+    },
     type: {
       type: String,
       enum: ['message', 'listing_update', 'seller_activation', 'report_update', 'rating', 'system', 'violation'],
