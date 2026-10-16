@@ -16,6 +16,47 @@ const seedData = async (forceClear = false) => {
   try {
     const userCount = await User.countDocuments();
     if (!forceClear && userCount > 0) {
+      const updateSeededSeller = async (legacyEmail, updates) => {
+        const user = await User.findOne({ email: legacyEmail });
+        if (!user) return false;
+
+        const conflictingUser = await User.exists({
+          _id: { $ne: user._id },
+          $or: [
+            { email: updates.email },
+            { username: updates.username || user.username }
+          ]
+        });
+        if (conflictingUser) {
+          console.warn(`[Seed] Skipped updating ${legacyEmail}: new email or username is already in use.`);
+          return false;
+        }
+
+        user.set(updates);
+        await user.save();
+        return true;
+      };
+
+      const updatedSellers = await Promise.all([
+        updateSeededSeller('maria@safemarket.ph', {
+          firstName: 'John',
+          lastName: 'Tabadero',
+          email: 'tabadero@gmail.com',
+          location: { province: 'Pangasinan', cityMunicipality: 'Quezon City' }
+        }),
+        updateSeededSeller('juan@safemarket.ph', {
+          firstName: 'Marv',
+          lastName: 'Menor',
+          username: 'marv',
+          email: 'menor@gmail.com',
+          location: { province: 'Pangasinan', cityMunicipality: 'Dagupan City' }
+        })
+      ]);
+      const updatedCount = updatedSellers.filter(Boolean).length;
+      if (updatedCount) {
+        console.log(`[Seed] Updated ${updatedCount} existing sample seller account(s) without clearing data.`);
+      }
+
       console.log(`[Seed] Database already populated (${userCount} users found). Skipping auto-seed.`);
       return;
     }
@@ -123,7 +164,7 @@ const seedData = async (forceClear = false) => {
       bio: 'Looking for quality pre-loved tech, furniture, and bicycles in Metro Manila.'
     });
 
-    console.log('[Seed] Created users: admin, maria_seller, juan_tech, carlo_buyer');
+    console.log('[Seed] Created users: admin, maria_seller, marv, carlo_buyer');
 
     // 4. Create Sample Listings with Realistic SafeMarket Data & Gemini AI Risk Flags
     const listings = [
@@ -456,7 +497,8 @@ const seedData = async (forceClear = false) => {
     console.log('\n======================================================');
     console.log('✅ SafeMarket Seed Data Complete!');
     console.log('Admin Account: admin@safemarket.ph / Admin123!');
-    console.log('Seller Account: maria@safemarket.ph / Password123!');
+    console.log('Seller Account: tabadero@gmail.com / Password123!');
+    console.log('Seller Account: menor@gmail.com / Password123!');
     console.log('Buyer Account: carlo@safemarket.ph / Password123!');
     console.log('======================================================\n');
 

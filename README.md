@@ -69,8 +69,8 @@ As strictly required by the project proposal, this application uses **ONLY**:
 | Role | Email | Password | Details |
 | :--- | :--- | :--- | :--- |
 | **Administrator** | `admin@safemarket.ph` | `Admin123!` | Full moderation access (`/admin`) |
-| **Verified Seller** | `maria@safemarket.ph` | `Password123!` | Quezon City seller with active listings & ratings |
-| **Verified Seller** | `juan@safemarket.ph` | `Password123!` | Cebu City seller with tech & camera items |
+| **Verified Seller** | `tabadero@gmail.com` | `Password123!` | John Tabadero (`maria_seller`), Quezon City seller with active listings & ratings |
+| **Verified Seller** | `menor@gmail.com` | `Password123!` | Marv Menor (`marv`), Dagupan City seller with tech & camera items |
 | **Buyer** | `carlo@safemarket.ph` | `Password123!` | Normal buyer account (can test "Become a Seller") |
 
 ---
