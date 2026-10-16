@@ -192,7 +192,7 @@ export default function ProductDetail() {
             <ListingImage
               src={images[activeImageIdx]}
               alt={listing.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-xs font-semibold">
               Condition: {listing.condition}
@@ -212,7 +212,7 @@ export default function ProductDetail() {
                       : 'border-slate-200 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <ListingImage src={img} alt="" className="w-full h-full object-cover" />
+                  <ListingImage src={img} alt="" className="w-full h-full object-contain" />
                 </button>
               ))}
             </div>

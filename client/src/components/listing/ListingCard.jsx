@@ -51,7 +51,7 @@ export default function ListingCard({ listing }) {
         <ListingImage
           src={imageSrc}
           alt={listing.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-contain"
           loading="lazy"
         />
         <div className="absolute top-2.5 left-2.5">
