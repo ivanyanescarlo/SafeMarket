@@ -6,7 +6,7 @@ import ListingImage from '../common/ListingImage';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
-export default function ListingCard({ listing }) {
+export default function ListingCard({ listing, buyerRatings = [] }) {
   const { addToCart, removeFromCart, isInCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ export default function ListingCard({ listing }) {
   const seller = listing.sellerId || {};
   const sellerId = seller._id || seller;
   const isOwner = Boolean(user && sellerId?.toString() === user._id?.toString());
+  const isSold = listing.status === 'sold';
   const formattedPrice = new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -58,7 +59,7 @@ export default function ListingCard({ listing }) {
           <RiskBadge level={listing.riskLevel} size="xs" />
         </div>
 
-        {!isOwner && (
+        {!isOwner && !isSold && (
           <div className="absolute top-2.5 right-2.5">
             <button
               type="button"
@@ -72,6 +73,14 @@ export default function ListingCard({ listing }) {
             >
               {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
             </button>
+          </div>
+        )}
+
+        {isSold && (
+          <div className="absolute top-2.5 right-2.5">
+            <span className="rounded-full bg-blue-700 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow">
+              Sold
+            </span>
           </div>
         )}
 
@@ -101,6 +110,40 @@ export default function ListingCard({ listing }) {
           {formattedPrice}
         </div>
 
+        {buyerRatings.length > 0 && (
+          <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+            {buyerRatings.map((rating) => (
+              <div key={rating._id} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-xs font-bold text-slate-700">
+                    {rating.buyerId
+                      ? `${rating.buyerId.firstName} ${rating.buyerId.lastName}`.trim()
+                      : 'Buyer'}
+                  </span>
+                  <div
+                    className="flex shrink-0 items-center text-amber-500"
+                    aria-label={`${rating.rating} out of 5 stars`}
+                  >
+                    {[...Array(5)].map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`h-3.5 w-3.5 ${
+                          index < rating.rating
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                {rating.feedback && (
+                  <p className="text-xs italic text-slate-600">"{rating.feedback}"</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-1.5 truncate max-w-[160px]">
             <MapPin className="w-4 h-4 text-safegreen-600 flex-shrink-0" />
@@ -114,9 +157,7 @@ export default function ListingCard({ listing }) {
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               <span>{seller.averageRating.toFixed(1)}</span>
             </div>
-          ) : (
-            <span className="text-[11px] text-slate-400 font-semibold">New Seller</span>
-          )}
+          ) : null}
         </div>
       </div>
     </Link>

@@ -16,6 +16,7 @@ exports.getStats = async (req, res) => {
     const totalBuyers = await User.countDocuments({ role: 'buyer', isVerified: true });
     const totalSellers = await User.countDocuments({ role: 'seller', isVerified: true });
     const totalSuspendedUsers = await User.countDocuments({ status: 'suspended', isVerified: true, role: { $ne: 'admin' } });
+    const totalBlockedUsers = await User.countDocuments({ status: 'blocked', isVerified: true, role: { $ne: 'admin' } });
 
     const totalListings = await Listing.countDocuments();
     const activeListings = await Listing.countDocuments({ status: 'active' });
@@ -125,7 +126,8 @@ exports.getStats = async (req, res) => {
           total: totalUsers,
           buyers: totalBuyers,
           sellers: totalSellers,
-          suspended: totalSuspendedUsers
+          suspended: totalSuspendedUsers,
+          blocked: totalBlockedUsers
         },
         listings: {
           total: totalListings,

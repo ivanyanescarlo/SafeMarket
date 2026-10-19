@@ -33,6 +33,7 @@ export default function ProductDetail() {
 
   const [listing, setListing] = useState(null);
   const [otherListings, setOtherListings] = useState([]);
+  const [buyerRatings, setBuyerRatings] = useState([]);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -84,6 +85,7 @@ export default function ProductDetail() {
         if (data.success) {
           setListing(data.listing);
           setOtherListings(data.otherSellerListings || []);
+          setBuyerRatings(data.buyerRatings || []);
         }
       } catch (err) {
         console.error('Failed to load listing:', err);
@@ -223,46 +225,107 @@ export default function ProductDetail() {
             <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-2">
               Item Description
             </h3>
-            <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-              {listing.description}
-            </p>
+            <div className="max-h-80 overflow-y-auto overscroll-contain pr-2">
+              <div className="space-y-4">
+                <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                  {listing.description}
+                </p>
 
-            {/* Additional details */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs">
-              {listing.brand && (
-                <div>
-                  <span className="text-slate-400 block">Brand</span>
-                  <span className="font-semibold text-slate-800">{listing.brand}</span>
+                {/* Additional details */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs">
+                  {listing.brand && (
+                    <div>
+                      <span className="text-slate-400 block">Brand</span>
+                      <span className="font-semibold text-slate-800">{listing.brand}</span>
+                    </div>
+                  )}
+                  {listing.model && (
+                    <div>
+                      <span className="text-slate-400 block">Model</span>
+                      <span className="font-semibold text-slate-800">{listing.model}</span>
+                    </div>
+                  )}
+                  {listing.itemAge && (
+                    <div>
+                      <span className="text-slate-400 block">Age of Item</span>
+                      <span className="font-semibold text-slate-800">{listing.itemAge}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-slate-400 block">Category</span>
+                    <span className="font-semibold text-slate-800">{listing.category}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Views</span>
+                    <span className="font-semibold text-slate-800">{listing.views || 1} views</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Listed On</span>
+                    <span className="font-semibold text-slate-800">
+                      {new Date(listing.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-              )}
-              {listing.model && (
-                <div>
-                  <span className="text-slate-400 block">Model</span>
-                  <span className="font-semibold text-slate-800">{listing.model}</span>
-                </div>
-              )}
-              {listing.itemAge && (
-                <div>
-                  <span className="text-slate-400 block">Age of Item</span>
-                  <span className="font-semibold text-slate-800">{listing.itemAge}</span>
-                </div>
-              )}
-              <div>
-                <span className="text-slate-400 block">Category</span>
-                <span className="font-semibold text-slate-800">{listing.category}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Views</span>
-                <span className="font-semibold text-slate-800">{listing.views || 1} views</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Listed On</span>
-                <span className="font-semibold text-slate-800">
-                  {new Date(listing.createdAt).toLocaleDateString()}
-                </span>
               </div>
             </div>
           </div>
+
+          {listing.status === 'sold' && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <h3 className="border-b border-slate-100 pb-2 text-base font-bold text-slate-900">
+                Buyer Ratings &amp; Feedback
+              </h3>
+              {buyerRatings.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  No buyer ratings or feedback for this item yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {buyerRatings.map((rating) => (
+                    <div
+                      key={rating._id}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800">
+                          {rating.buyerId
+                            ? `${rating.buyerId.firstName} ${rating.buyerId.lastName}`.trim()
+                            : 'Buyer'}
+                        </span>
+                        <div
+                          className="flex items-center text-amber-500"
+                          aria-label={`${rating.rating} out of 5 stars`}
+                        >
+                          {[...Array(5)].map((_, index) => (
+                            <Star
+                              key={index}
+                              className={`h-3.5 w-3.5 ${
+                                index < rating.rating
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {rating.feedback && (
+                        <p className="mt-2 text-xs italic text-slate-600">
+                          "{rating.feedback}"
+                        </p>
+                      )}
+                      <span className="mt-2 block text-[10px] text-slate-400">
+                        {new Date(rating.createdAt).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Right Column: Seller Profile, Pricing, Gemini AI Risk Warning & Actions (5 cols) */}

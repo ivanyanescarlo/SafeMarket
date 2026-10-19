@@ -120,11 +120,6 @@ export default function RiskWarningBanner({
           <p className="text-xs text-emerald-800 mt-1">
             {riskSummary || 'No common scam-related warning signs were detected.'}
           </p>
-          {priceNotVerified && (
-            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs font-semibold text-amber-900">
-              This is only a basic scam-text check. Product identity and price were not verified, so a low scam-risk result does not mean the price is fair.
-            </p>
-          )}
           <p className="mt-1.5 text-xs text-emerald-700 italic">
             {recommendation || 'Standard precaution: Meet in a well-lit public place and test the item before finalizing payment.'}
           </p>

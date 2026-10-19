@@ -105,7 +105,6 @@ export default function AdminListings({ onAction }) {
             <option value="active">Active</option>
             <option value="removed">Removed</option>
             <option value="sold">Sold</option>
-            <option value="inactive">Inactive</option>
           </select>
         </div>
       </div>

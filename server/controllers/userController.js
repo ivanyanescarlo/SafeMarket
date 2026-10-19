@@ -21,17 +21,21 @@ exports.getUserProfile = async (req, res) => {
       });
     }
 
-    // Get active listings if user is a seller
-    const listings = await Listing.find({
+    // Include sold listings on seller profiles so buyers can review their sales history.
+    const sellerListings = await Listing.find({
       sellerId: user._id,
-      status: 'active'
-    }).sort({ createdAt: -1 });
+      status: { $regex: /^(active|sold)$/i }
+    }).sort({ createdAt: -1 }).lean();
+    const listings = sellerListings.map((listing) => ({
+      ...listing,
+      status: listing.status.toLowerCase()
+    }));
 
     // Get seller ratings & reviews
     const ratings = await Rating.find({ sellerId: user._id })
       .populate('buyerId', 'firstName lastName username profileImage')
-      .sort({ createdAt: -1 })
-      .limit(10);
+      .populate('listingId', 'title')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -54,7 +58,7 @@ exports.getUserProfile = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, bio, profileImage, mobileNumber, province, cityMunicipality } = req.body;
+    const { firstName, lastName, username, bio, profileImage, mobileNumber, province, cityMunicipality } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -66,6 +70,35 @@ exports.updateProfile = async (req, res) => {
 
     if (firstName) user.firstName = firstName.trim();
     if (lastName) user.lastName = lastName.trim();
+    if (username !== undefined && user.role !== 'admin') {
+      if (typeof username !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be text.'
+        });
+      }
+
+      const cleanUsername = username.trim().toLowerCase();
+      if (cleanUsername.length < 3 || cleanUsername.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be between 3 and 50 characters.'
+        });
+      }
+
+      const existingUsername = await User.findOne({
+        username: cleanUsername,
+        _id: { $ne: user._id }
+      });
+      if (existingUsername) {
+        return res.status(409).json({
+          success: false,
+          message: 'This username is already taken. Please choose another username.'
+        });
+      }
+
+      user.username = cleanUsername;
+    }
     if (bio !== undefined) user.bio = bio.trim();
     if (profileImage !== undefined) user.profileImage = profileImage.trim();
     if (mobileNumber) user.mobileNumber = mobileNumber.trim();
@@ -91,7 +124,7 @@ exports.updateProfile = async (req, res) => {
       action: 'USER_PROFILE_UPDATED',
       targetType: 'User',
       targetId: user._id,
-      details: { firstName: user.firstName, lastName: user.lastName },
+      details: { firstName: user.firstName, lastName: user.lastName, username: user.username },
       ip: req.ip,
       url: req.baseUrl + req.path
     });
@@ -103,6 +136,12 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('updateProfile error:', error);
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.username) {
+      return res.status(409).json({
+        success: false,
+        message: 'This username is already taken. Please choose another username.'
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Failed to update profile.'

@@ -235,11 +235,11 @@ export default function LocationSelector({
       <CustomScrollDropdown
         label="City / Municipality"
         value={selectedCity}
-        placeholder={allowAllAreas && !selectedProvince ? 'Select a province first' : 'Select City / Municipality'}
+        placeholder="Select City / Municipality"
         options={PANGASINAN_CITIES}
         onSelect={handleCitySelect}
-        disabled={allowAllAreas && !selectedProvince}
-        required={required && (!allowAllAreas || Boolean(selectedProvince))}
+        disabled={false}
+        required={required}
       />
     </div>
   );

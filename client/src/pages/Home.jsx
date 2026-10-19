@@ -86,7 +86,7 @@ export default function Home() {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Trade second-hand gadgets, vehicles, and home essentials within your Philippine community. Every listing is analyzed by <strong className="text-white">Gemini AI</strong> to flag unrealistic prices and advance-deposit scams.
+            Trade second-hand gadgets, vehicles, and home essentials within your Philippine community. Every listing is analyzed by <strong className="text-white">SafeMarket AI</strong> to flag unrealistic prices and advance-deposit scams.
           </p>
 
           {/* Search Box Card */}

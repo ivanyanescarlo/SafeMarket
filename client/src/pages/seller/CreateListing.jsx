@@ -95,7 +95,7 @@ export default function CreateListing() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'price') {
-      const sanitized = value.replace(/[^0-9]/g, '');
+      const sanitized = value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
       setFormData((prev) => ({ ...prev, price: sanitized }));
       return;
     }
@@ -405,6 +405,9 @@ export default function CreateListing() {
               <span>{analyzingAi ? 'Screening with Gemini...' : 'Analyze Listing Risk'}</span>
             </button>
           </div>
+          <p className="text-xs text-slate-600">
+            To avoid Gemini rate limits, live analysis requests are spaced at least 15 seconds apart. If another request is running, this analysis may take longer.
+          </p>
 
           {aiAnalysis && (
             <div className="animate-fade-in pt-2">

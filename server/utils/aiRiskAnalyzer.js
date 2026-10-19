@@ -3,8 +3,30 @@ const crypto = require('crypto');
 const ANALYSIS_CACHE_TTL_MS = 2 * 60 * 1000;
 const MAX_CACHED_ANALYSES = 100;
 const GEMINI_TIMEOUT_MS = 15000;
+const GEMINI_MIN_REQUEST_INTERVAL_MS = 15000;
 const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 const analysisCache = new Map();
+let geminiRequestQueue = Promise.resolve();
+let lastGeminiRequestAt = 0;
+
+async function waitForGeminiRequestSlot() {
+  let releaseQueue;
+  const previousRequest = geminiRequestQueue;
+  geminiRequestQueue = new Promise((resolve) => {
+    releaseQueue = resolve;
+  });
+
+  await previousRequest;
+  const waitMs = Math.max(
+    0,
+    lastGeminiRequestAt + GEMINI_MIN_REQUEST_INTERVAL_MS - Date.now()
+  );
+  if (waitMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+  lastGeminiRequestAt = Date.now();
+  releaseQueue();
+}
 
 const getListingCacheKey = (listingData) =>
   crypto.createHash('sha256').update(JSON.stringify(listingData)).digest('hex');
@@ -321,6 +343,7 @@ Price assessment requirements:
 - Do not treat a low price alone as proof of a scam.
 - Use Philippine pesos for all prices.`;
 
+    await waitForGeminiRequestSlot();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
     let response;

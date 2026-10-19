@@ -172,7 +172,7 @@ export default function ProductCatalog() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Filters Sidebar */}
-        <div className={`md:block ${mobileFilterOpen ? 'block' : 'hidden'} md:col-span-1 space-y-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm`}>
+        <div className={`md:block ${mobileFilterOpen ? 'block' : 'hidden'} md:col-span-1 md:sticky md:top-20 md:max-h-[calc(100vh-5rem)] md:self-start md:overflow-y-auto md:overscroll-contain hide-scrollbar space-y-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
               <Filter className="w-4 h-4 text-safegreen-600" />

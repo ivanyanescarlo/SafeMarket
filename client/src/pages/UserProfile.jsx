@@ -10,7 +10,7 @@ import {
   Edit3,
   CheckCircle2,
   AlertCircle,
-  Phone
+  Phone,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +34,7 @@ export default function UserProfile() {
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     bio: '',
     profileImage: '',
     mobileNumber: '',
@@ -42,6 +43,7 @@ export default function UserProfile() {
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [listingStatusFilter, setListingStatusFilter] = useState('active');
 
   const isOwnProfile = currentUser && currentUser._id === profileUserId;
 
@@ -60,6 +62,7 @@ export default function UserProfile() {
             setEditForm({
               firstName: data.user.firstName || '',
               lastName: data.user.lastName || '',
+              username: data.user.username || '',
               bio: data.user.bio || '',
               profileImage: data.user.profileImage || '',
               mobileNumber: data.user.mobileNumber || '',
@@ -118,6 +121,9 @@ export default function UserProfile() {
   const isProfileAdmin = profileUser.role === 'admin';
   const isSeller = !isProfileAdmin && (profileUser.role === 'seller' || profileUser.sellerProfile?.isSeller);
   const isBuyer = !isProfileAdmin && !isSeller;
+  const activeListings = listings.filter((listing) => listing.status === 'active');
+  const soldListings = listings.filter((listing) => listing.status === 'sold');
+  const filteredListings = listings.filter((listing) => listing.status === listingStatusFilter);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -269,7 +275,7 @@ export default function UserProfile() {
 
         {/* Seller Rating Stats Banner */}
         {isSeller && (
-          <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
             <div className="p-3 bg-slate-50 rounded-2xl">
               <span className="text-xs text-slate-400 block font-medium">Seller Rating</span>
               <div className="flex items-center justify-center gap-1 text-lg font-extrabold text-amber-500 mt-0.5">
@@ -288,7 +294,14 @@ export default function UserProfile() {
             <div className="p-3 bg-slate-50 rounded-2xl">
               <span className="text-xs text-slate-400 block font-medium">Active Items</span>
               <span className="text-lg font-extrabold text-safegreen-700 mt-0.5 block">
-                {listings.length}
+                {activeListings.length}
+              </span>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl">
+              <span className="text-xs text-slate-400 block font-medium">Sold Items</span>
+              <span className="text-lg font-extrabold text-slate-800 mt-0.5 block">
+                {soldListings.length}
               </span>
             </div>
 
@@ -310,7 +323,7 @@ export default function UserProfile() {
           </h3>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   First Name
@@ -337,6 +350,23 @@ export default function UserProfile() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
                 />
               </div>
+              {!isProfileAdmin && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    minLength={3}
+                    value={editForm.username}
+                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">At least 3 characters; usernames are not case-sensitive.</p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -456,91 +486,60 @@ export default function UserProfile() {
 
       {/* User's Listings */}
       {isSeller && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <section className="space-y-4">
+          <div className="flex items-center">
             <h3 className="text-xl font-extrabold text-slate-900">
-              Active Listings ({listings.length})
+              Seller's Items ({listings.length})
             </h3>
-            {isOwnProfile && (
-              <Link
-                to="/seller/create-listing"
-                className="text-xs font-bold text-safegreen-700 hover:underline"
-              >
-                + Post New Item
-              </Link>
-            )}
           </div>
 
-          {listings.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-xs text-slate-400">
-              No active listings currently available from this user.
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'active', label: `For Sale (${activeListings.length})` },
+              { value: 'sold', label: `Sold (${soldListings.length})` }
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setListingStatusFilter(filter.value)}
+                className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${
+                  listingStatusFilter === filter.value
+                    ? 'bg-safegreen-600 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+            {filteredListings.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-xs text-slate-400">
+                {listingStatusFilter === 'sold'
+                  ? 'No sold items to show.'
+                  : 'No items currently available from this seller.'}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {listings.map((item) => (
-                <ListingCard key={item._id} listing={item} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {filteredListings.map((item) => {
+                  const itemRatings = listingStatusFilter === 'sold'
+                    ? ratings.filter((rating) => {
+                      const ratedListingId = rating.listingId?._id || rating.listingId;
+                      return ratedListingId?.toString() === item._id.toString();
+                    })
+                    : [];
 
-      {/* Seller Reviews & Ratings */}
-      {isSeller && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-extrabold text-slate-900">
-            Ratings & Feedback ({ratings.length})
-          </h3>
-
-          {ratings.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 text-xs text-slate-400">
-              No reviews recorded yet for this seller.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {ratings.map((rev) => (
-                <div
-                  key={rev._id}
-                  className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-700">
-                        {rev.buyerId?.firstName ? rev.buyerId.firstName[0].toUpperCase() : 'B'}
-                      </div>
-                      <span className="text-xs font-bold text-slate-800">
-                        {rev.buyerId?.firstName} {rev.buyerId?.lastName}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center text-amber-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3.5 h-3.5 ${
-                            i < rev.rating
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'text-slate-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {rev.feedback && (
-                    <p className="text-xs text-slate-600 italic">
-                      "{rev.feedback}"
-                    </p>
-                  )}
-
-                  <span className="text-[10px] text-slate-400 block pt-1">
-                    {new Date(rev.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                  return (
+                    <ListingCard
+                      key={item._id}
+                      listing={item}
+                      buyerRatings={itemRatings}
+                    />
+                  );
+                })}
+              </div>
+            )}
+        </section>
       )}
 
     </div>

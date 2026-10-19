@@ -1,4 +1,5 @@
 const Listing = require('../models/Listing');
+const Rating = require('../models/Rating');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { analyzeListingWithGemini } = require('../utils/aiRiskAnalyzer');
@@ -277,11 +278,17 @@ exports.getListingById = async (req, res) => {
       _id: { $ne: listing._id },
       status: 'active'
     }).limit(4);
+    const buyerRatings = listing.status === 'sold'
+      ? await Rating.find({ listingId: listing._id })
+        .populate('buyerId', 'firstName lastName username profileImage')
+        .sort({ createdAt: -1 })
+      : [];
 
     res.status(200).json({
       success: true,
       listing,
-      otherSellerListings
+      otherSellerListings,
+      buyerRatings
     });
   } catch (error) {
     console.error('getListingById error:', error);

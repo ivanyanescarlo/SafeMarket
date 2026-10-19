@@ -199,18 +199,16 @@ export default function AdminDashboard() {
           {activeTab === 'dashboard' && (
               <div className="flex flex-col gap-8 animate-fade-in">
               {/* Counters Grid */}
-              <div className="order-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
                 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Users</span>
-                  <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.users?.total || 0}</p>
-                  <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
-                    <span>{stats?.users?.sellers || 0} Sellers</span>
-                    <span>•</span>
-                    <span>{stats?.users?.buyers || 0} Buyers</span>
-                    <span>•</span>
-                    <span>{stats?.users?.suspended || 0} Suspended</span>
-                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Sellers</span>
+                  <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.users?.sellers || 0}</p>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Buyers</span>
+                  <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.users?.buyers || 0}</p>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -230,24 +228,28 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Medium Risk Items</span>
+                  <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.listings?.mediumRisk || 0}</p>
+                  <span className="text-[11px] text-slate-400 block mt-2">Listings flagged as medium risk</span>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400">AI High Risk Flags</span>
                   <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{stats?.listings?.highRisk || 0}</p>
-                  <span className="text-[11px] text-slate-400 block mt-2">
-                    {stats?.listings?.mediumRisk || 0} Medium risk items
-                  </span>
+                  <span className="text-[11px] text-slate-400 block mt-2">Listings flagged as high risk</span>
                 </div>
 
               </div>
 
               {/* Charts Section under Total Board: Left Line Chart & Right Pie Chart */}
-              <div className="order-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Left: Listings & Activity Trend */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-safegreen-600" />
-                        <span>Total Sign-ups</span>
+                        <span>Marketplace Activity</span>
                       </h3>
                     <select
                       value={trendRange}
@@ -303,7 +305,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                       <PieIcon className="w-4 h-4 text-safegreen-600" />
-                      <span>Product Category Share</span>
+                      <span>Product Categories</span>
                     </h3>
                     <span className="text-[11px] text-slate-400 font-medium">Most Listed Items</span>
                   </div>

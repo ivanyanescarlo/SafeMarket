@@ -131,7 +131,7 @@ export default function EditListing() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'price') {
-      const sanitized = value.replace(/[^0-9]/g, '');
+      const sanitized = value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
       setFormData((prev) => ({ ...prev, price: sanitized }));
       return;
     }
@@ -444,6 +444,9 @@ export default function EditListing() {
               <span>{analyzingAi ? 'Scanning with AI...' : 'Re-screen with Gemini AI'}</span>
             </button>
           </div>
+          <p className="text-xs text-emerald-200/80">
+            To avoid Gemini rate limits, live analysis requests are spaced at least 15 seconds apart. If another request is running, this analysis may take longer.
+          </p>
 
           {/* AI Banner Display */}
           {aiAnalysis && (
