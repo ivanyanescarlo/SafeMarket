@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -55,9 +55,14 @@ const ITEM_AGE_OPTIONS = [
   '5+ Years'
 ];
 
+const MAX_LISTING_PRICE = 599999;
+
 export default function CreateListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const titleInputRef = useRef(null);
+  const descriptionInputRef = useRef(null);
+  const publishAnalysisMessageRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -96,21 +101,25 @@ export default function CreateListing() {
     const { name, value } = e.target;
     if (name === 'price') {
       const sanitized = value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+      if (Number(sanitized) > MAX_LISTING_PRICE) {
+        setError('Maximum price limit is ₱599,999.');
+        return;
+      }
       setFormData((prev) => ({ ...prev, price: sanitized }));
+      setError((currentError) =>
+        currentError === 'Maximum price limit is ₱599,999.' ? '' : currentError
+      );
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Test / Run Gemini AI Listing Risk Analyzer Preview
-  const handleAnalyzeWithGemini = async () => {
-    if (!formData.title && !formData.description) {
-      setError('Please provide at least a Title or Description to analyze with Gemini AI.');
-      return;
-    }
+  const handleAnalyzeListing = async () => {
+    setError('');
+    if (!titleInputRef.current.reportValidity()) return;
+    if (!descriptionInputRef.current.reportValidity()) return;
 
     setAnalyzingAi(true);
-    setError('');
 
     try {
       const res = await api.post('/ai/analyze-listing', {
@@ -128,7 +137,7 @@ export default function CreateListing() {
         setAiAnalysis(res.analysis);
       }
     } catch (err) {
-      setError(err.message || 'Gemini AI risk screening failed.');
+      setError(err.message || 'SafeMarket AI risk screening failed.');
     } finally {
       setAnalyzingAi(false);
     }
@@ -148,8 +157,8 @@ export default function CreateListing() {
       return;
     }
 
-    if (Number(formData.price) > 500000) {
-      setError('Maximum price limit is ₱500,000.');
+    if (Number(formData.price) > MAX_LISTING_PRICE) {
+      setError('Maximum price limit is ₱599,999.');
       return;
     }
 
@@ -159,7 +168,11 @@ export default function CreateListing() {
     }
 
     if (!aiAnalysis) {
-      setError('Please run the Gemini AI Listing Risk Analyzer before publishing.');
+      const message = 'Please analyze your listing with SafeMarket AI before publishing.';
+      setError(message);
+      requestAnimationFrame(() => {
+        publishAnalysisMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
 
@@ -200,7 +213,7 @@ export default function CreateListing() {
           Create Second-Hand Listing
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Post an item with instant Gemini AI scam risk screening to protect peer-to-peer buyers and sellers.
+          Post an item with instant SafeMarket AI scam risk screening to protect peer-to-peer buyers and sellers.
         </p>
       </div>
 
@@ -227,6 +240,7 @@ export default function CreateListing() {
               type="text"
               maxLength={50}
               name="title"
+              ref={titleInputRef}
               value={formData.title}
               onChange={handleChange}
               required
@@ -252,7 +266,7 @@ export default function CreateListing() {
                 placeholder="e.g. 8500"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500 font-bold text-slate-800"
               />
-              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱500,000</p>
+              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱599,999</p>
             </div>
 
             <CustomSelect
@@ -280,6 +294,7 @@ export default function CreateListing() {
             </label>
             <textarea
               name="description"
+              ref={descriptionInputRef}
               value={formData.description}
               onChange={handleChange}
               required
@@ -288,7 +303,7 @@ export default function CreateListing() {
               className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-safegreen-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Tip: Honest details help Gemini AI rate your listing as Low Risk!
+              Tip: Honest details help SafeMarket AI rate your listing as Low Risk!
             </p>
           </div>
         </div>
@@ -308,6 +323,7 @@ export default function CreateListing() {
                 type="text"
                 maxLength={50}
                 name="brand"
+                autoComplete="off"
                 value={formData.brand}
                 onChange={handleChange}
                 placeholder="e.g. Sony, Apple, Nike"
@@ -323,6 +339,7 @@ export default function CreateListing() {
                 type="text"
                 maxLength={50}
                 name="model"
+                autoComplete="off"
                 value={formData.model}
                 onChange={handleChange}
                 placeholder="e.g. WH-1000XM4"
@@ -334,20 +351,16 @@ export default function CreateListing() {
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Item Age / Ownership Duration <span className="text-rose-500">*</span>
               </label>
-              <select
+              <CustomSelect
+                label={null}
                 name="itemAge"
                 value={formData.itemAge}
                 onChange={handleChange}
+                options={ITEM_AGE_OPTIONS}
+                placeholder="Select item age / ownership duration"
                 required
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500 shadow-2xs"
-              >
-                <option value="" disabled>Select item age / ownership duration</option>
-                {ITEM_AGE_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                buttonClassName="rounded-xl"
+              />
             </div>
           </div>
         </div>
@@ -378,7 +391,7 @@ export default function CreateListing() {
           />
         </div>
 
-        {/* GEMINI AI LISTING RISK ANALYZER INTERACTIVE PREVIEW */}
+        {/* SAFEMARKET AI LISTING RISK ANALYZER INTERACTIVE PREVIEW */}
         <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/60 rounded-3xl p-6 sm:p-8 border-2 border-emerald-300 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -387,7 +400,7 @@ export default function CreateListing() {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  Gemini AI Listing Risk Analyzer
+                  SafeMarket AI Listing Risk Analyzer
                 </h3>
                 <p className="text-xs text-slate-600">
                   Analyze your drafted title, description, and price for scam flags before publishing
@@ -397,16 +410,16 @@ export default function CreateListing() {
 
             <button
               type="button"
-              onClick={handleAnalyzeWithGemini}
+              onClick={handleAnalyzeListing}
               disabled={analyzingAi}
               className="px-4 py-2 bg-white border border-safegreen-400 text-safegreen-800 hover:bg-safegreen-100 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 text-safegreen-600" />
-              <span>{analyzingAi ? 'Screening with Gemini...' : 'Analyze Listing Risk'}</span>
+              <span>{analyzingAi ? 'Screening with SafeMarket AI...' : 'Analyze Listing Risk'}</span>
             </button>
           </div>
           <p className="text-xs text-slate-600">
-            To avoid Gemini rate limits, live analysis requests are spaced at least 15 seconds apart. If another request is running, this analysis may take longer.
+            SafeMarket AI is checking this listing for safety. This may take a little longer during busy periods.
           </p>
 
           {aiAnalysis && (
@@ -447,6 +460,15 @@ export default function CreateListing() {
             )}
           </button>
         </div>
+        {error === 'Please analyze your listing with SafeMarket AI before publishing.' && (
+          <p
+            ref={publishAnalysisMessageRef}
+            role="alert"
+            className="text-sm font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3"
+          >
+            Please analyze your listing with SafeMarket AI before publishing.
+          </p>
+        )}
 
       </form>
     </div>

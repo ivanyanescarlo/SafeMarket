@@ -328,7 +328,7 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* Right Column: Seller Profile, Pricing, Gemini AI Risk Warning & Actions (5 cols) */}
+        {/* Right Column: Seller Profile, Pricing, SafeMarket AI Risk Warning & Actions (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
           
           {/* Seller Card (Prominently displayed at the top) */}

@@ -278,7 +278,7 @@ async function analyzeListingWithGemini(listingData) {
     console.warn('[Gemini AI] No GEMINI_API_KEY found, using heuristic analyzer');
     return heuristicAnalyze(
       listingData,
-      'Gemini API is not configured. Basic scam-text screening only; product identity and price were not verified.'
+      'SafeMarket AI could not complete a live product and price check. Basic scam screening is still active.'
     );
   }
 
@@ -455,11 +455,11 @@ Price assessment requirements:
     });
   } catch (error) {
     console.error(`[Gemini AI] Error during AI analysis: ${error.message}. Engaging heuristic fallback.`);
-    let analysisSourceMessage = 'Google Search product and price checks failed. Basic scam-text screening only; product identity and price were not verified.';
+    let analysisSourceMessage = 'SafeMarket AI could not complete a live product and price check. Basic scam screening is still active.';
     if (error.status === 429) {
-      analysisSourceMessage = 'Google Search comparison is unavailable because Gemini API quota or rate limits were reached (HTTP 429). Basic scam-text screening only; product identity and price were not verified.';
+      analysisSourceMessage = 'SafeMarket AI is busy right now, so a live product and price check is unavailable. Basic scam screening is still active.';
     } else if (error.status === 401 || error.status === 403) {
-      analysisSourceMessage = `Google Search comparison is unavailable because Gemini API access was denied (HTTP ${error.status}). Check the API key and Search grounding access. Basic scam-text screening only; product identity and price were not verified.`;
+      analysisSourceMessage = 'SafeMarket AI could not complete a live product and price check. Basic scam screening is still active.';
     }
     return heuristicAnalyze(listingData, analysisSourceMessage);
   }

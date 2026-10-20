@@ -82,7 +82,7 @@ export default function AdminAiMonitoring({ onAction }) {
         <div>
           <span className="font-bold block">Scam Prevention Policy:</span>
           <span>
-            Gemini provides automated risk assessments and flags indicators like advance payment demands or extreme urgency. Administrators investigate and make the final decision to remove fraudulent listings.
+            SafeMarket AI provides automated risk assessments and flags indicators like advance payment demands or extreme urgency. Administrators investigate and make the final decision to remove fraudulent listings.
           </span>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function AdminAiMonitoring({ onAction }) {
               {/* Detected Indicators List */}
               <div className="mt-4 pt-3 border-t border-slate-200/80">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Gemini AI Detected Indicators:
+                  SafeMarket AI Detected Indicators:
                 </span>
                 <ul className="space-y-1">
                   {item.riskIndicators?.map((ind, idx) => (

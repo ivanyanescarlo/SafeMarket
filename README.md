@@ -1,6 +1,6 @@
 # SafeMarket: Secure Local Online Marketplace & Scam Prevention System
 
-SafeMarket is a functional web application designed for safe peer-to-peer second-hand trading within Philippine local communities. It features automated scam detection powered by **Google Gemini API** (`gemini-3.8-flash`), strict role-based access control, OTP verification, local Philippine location filtering, buyer-seller messaging, community reporting, seller ratings, and a comprehensive administrator moderation center.
+SafeMarket is a functional web application designed for safe peer-to-peer second-hand trading within Philippine local communities. It features automated scam detection through SafeMarket AI, strict role-based access control, OTP verification, local Philippine location filtering, buyer-seller messaging, community reporting, seller ratings, and a comprehensive administrator moderation center.
 
 ---
 
@@ -13,7 +13,7 @@ As strictly required by the project proposal, this application uses **ONLY**:
 * **Node.js** (Backend Runtime)
 * **Express.js** (Backend REST API)
 * **MongoDB** (Database running on `localhost:27017`)
-* **Gemini API** (`gemini-3.8-flash` AI Listing Risk Analyzer)
+* **SafeMarket AI** (AI Listing Risk Analyzer)
 
 > 🚫 **No payment gateways, credit card processing, or escrow systems are used.** SafeMarket facilitates local, safe in-person transactions and scam prevention.
 
@@ -32,7 +32,7 @@ As strictly required by the project proposal, this application uses **ONLY**:
 * **Step 3 – Seller Profile**: Optional bio and profile photo. No credit cards or bank accounts requested.
 * **Step 4 – Activation**: Activates Seller Mode in MongoDB, records acceptance, and unlocks the Seller Dashboard and Create Listing tools.
 
-### 3. Gemini AI Listing Risk Analyzer
+### 3. SafeMarket AI Listing Risk Analyzer
 * Scans listing title, description, price, condition, and location for:
   * Advance payment requests (e.g., GCash reservation deposits before meetup).
   * Unrealistic or too-good-to-be-true pricing (e.g., brand new iPhone 16 Pro for ₱10,000).
@@ -43,7 +43,7 @@ As strictly required by the project proposal, this application uses **ONLY**:
 
 ### 4. Marketplace & Search
 * Search by keyword, category, price range, condition, and location (Province & City/Municipality).
-* Filter by Gemini AI risk level.
+* Filter by SafeMarket AI risk level.
 * Product detail page with image gallery, seller profile snapshot, AI risk banner, "Message Seller", and "Report Listing" buttons.
 
 ### 5. Peer-to-Peer Messaging & Notifications
@@ -59,7 +59,7 @@ As strictly required by the project proposal, this application uses **ONLY**:
 * User account management (suspend or activate accounts, toggle roles).
 * Listing moderation (take down or restore listings with reasons).
 * Scam reports queue (review, resolve, or dismiss reports).
-* Gemini AI risk monitoring view (proactively inspect flagged listings).
+* SafeMarket AI risk monitoring view (proactively inspect flagged listings).
 * System activity logs (audit trail for logins, registrations, listings, and admin actions).
 
 ---
@@ -85,7 +85,7 @@ As strictly required by the project proposal, this application uses **ONLY**:
 ```bash
 cd server
 npm install
-npm run seed     # Seeds initial accounts, listings, and Gemini risk evaluations
+npm run seed     # Seeds initial accounts, listings, and SafeMarket AI risk evaluations
 npm start        # Runs on http://localhost:5000
 ```
 

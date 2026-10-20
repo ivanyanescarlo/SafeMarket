@@ -94,7 +94,7 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`\n🛡️ SafeMarket API Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   console.log(`📡 URL: http://localhost:${PORT}`);
-  console.log(`🤖 Gemini AI Risk Analyzer initialized with gemini-3.8-flash\n`);
+  console.log(`🤖 SafeMarket AI Risk Analyzer initialized\n`);
 });
 
 module.exports = app;

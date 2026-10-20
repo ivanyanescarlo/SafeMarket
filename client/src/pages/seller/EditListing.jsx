@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -51,9 +51,13 @@ const ITEM_AGE_OPTIONS = [
   '5+ Years'
 ];
 
+const MAX_LISTING_PRICE = 599999;
+
 export default function EditListing() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const titleInputRef = useRef(null);
+  const descriptionInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -132,21 +136,25 @@ export default function EditListing() {
     const { name, value } = e.target;
     if (name === 'price') {
       const sanitized = value.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+      if (Number(sanitized) > MAX_LISTING_PRICE) {
+        setError('Maximum price limit is ₱599,999.');
+        return;
+      }
       setFormData((prev) => ({ ...prev, price: sanitized }));
+      setError((currentError) =>
+        currentError === 'Maximum price limit is ₱599,999.' ? '' : currentError
+      );
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Test / Run Gemini AI Listing Risk Analyzer Preview
-  const handleAnalyzeWithGemini = async () => {
-    if (!formData.title && !formData.description) {
-      setError('Please provide at least a Title or Description to analyze with Gemini AI.');
-      return;
-    }
+  const handleAnalyzeListing = async () => {
+    setError('');
+    if (!titleInputRef.current.reportValidity()) return;
+    if (!descriptionInputRef.current.reportValidity()) return;
 
     setAnalyzingAi(true);
-    setError('');
 
     try {
       const res = await api.post('/ai/analyze-listing', {
@@ -164,7 +172,7 @@ export default function EditListing() {
         setAiAnalysis(res.analysis);
       }
     } catch (err) {
-      setError(err.message || 'Gemini AI risk screening failed.');
+      setError(err.message || 'SafeMarket AI risk screening failed.');
     } finally {
       setAnalyzingAi(false);
     }
@@ -181,8 +189,8 @@ export default function EditListing() {
       return;
     }
 
-    if (Number(formData.price) > 500000) {
-      setError('Maximum price limit is ₱500,000.');
+    if (Number(formData.price) > MAX_LISTING_PRICE) {
+      setError('Maximum price limit is ₱599,999.');
       setSaving(false);
       return;
     }
@@ -230,7 +238,7 @@ export default function EditListing() {
           Edit Product Listing
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Update product specifications, price, photos, or status. Gemini AI automatically re-screens updates for buyer protection.
+          Update product specifications, price, photos, or status. SafeMarket AI automatically re-screens updates for buyer protection.
         </p>
       </div>
 
@@ -257,6 +265,7 @@ export default function EditListing() {
               type="text"
               maxLength={50}
               name="title"
+              ref={titleInputRef}
               value={formData.title}
               onChange={handleChange}
               required
@@ -282,7 +291,7 @@ export default function EditListing() {
                 placeholder="₱ 25,000"
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
               />
-              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱500,000</p>
+              <p className="mt-1 text-[11px] text-slate-500">Maximum price: ₱599,999</p>
             </div>
 
             <CustomSelect
@@ -310,6 +319,7 @@ export default function EditListing() {
             </label>
             <textarea
               name="description"
+              ref={descriptionInputRef}
               value={formData.description}
               onChange={handleChange}
               rows={5}
@@ -333,6 +343,7 @@ export default function EditListing() {
                   type="text"
                   maxLength={50}
                   name="brand"
+                  autoComplete="off"
                   value={formData.brand}
                   onChange={handleChange}
                   placeholder="Apple, Sony, Samsung..."
@@ -348,6 +359,7 @@ export default function EditListing() {
                   type="text"
                   maxLength={50}
                   name="model"
+                  autoComplete="off"
                   value={formData.model}
                   onChange={handleChange}
                   placeholder="e.g. M2 16GB 512GB"
@@ -360,20 +372,16 @@ export default function EditListing() {
                   Item Age / Ownership Duration <span className="text-rose-500">*</span>
                 </label>
                 
-                <select
+                <CustomSelect
+                  label={null}
                   name="itemAge"
                   value={formData.itemAge}
                   onChange={handleChange}
+                  options={ITEM_AGE_OPTIONS}
+                  placeholder="Select item age / ownership duration"
                   required
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-safegreen-500"
-                >
-                  <option value="" disabled>Select item age / ownership duration</option>
-                  {ITEM_AGE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  buttonClassName="rounded-lg px-3 py-2 text-xs"
+                />
               </div>
             </div>
           </div>
@@ -417,7 +425,7 @@ export default function EditListing() {
           />
         </div>
 
-        {/* Gemini AI Risk Analyzer Section */}
+        {/* SafeMarket AI Risk Analyzer Section */}
         <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
@@ -426,7 +434,7 @@ export default function EditListing() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">
-                  Gemini 3.8 Flash AI Listing Risk Analyzer
+                  SafeMarket AI Listing Risk Analyzer
                 </h3>
                 <p className="text-xs text-emerald-200/80">
                   Scans pricing, title, description, and conditions to evaluate scam risk for buyer safety.
@@ -436,16 +444,16 @@ export default function EditListing() {
 
             <button
               type="button"
-              onClick={handleAnalyzeWithGemini}
+              onClick={handleAnalyzeListing}
               disabled={analyzingAi}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{analyzingAi ? 'Scanning with AI...' : 'Re-screen with Gemini AI'}</span>
+              <span>{analyzingAi ? 'Scanning with SafeMarket AI...' : 'Re-screen with SafeMarket AI'}</span>
             </button>
           </div>
           <p className="text-xs text-emerald-200/80">
-            To avoid Gemini rate limits, live analysis requests are spaced at least 15 seconds apart. If another request is running, this analysis may take longer.
+            SafeMarket AI is checking this listing for safety. This may take a little longer during busy periods.
           </p>
 
           {/* AI Banner Display */}

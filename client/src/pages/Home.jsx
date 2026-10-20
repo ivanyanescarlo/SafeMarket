@@ -121,7 +121,7 @@ export default function Home() {
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-safegreen-400" />
-              Real-Time Gemini AI Risk Screening
+              Real-Time SafeMarket AI Risk Screening
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-safegreen-400" />
@@ -217,9 +217,9 @@ export default function Home() {
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Gemini AI Risk Screening</h3>
+                <h3 className="font-bold text-slate-900 text-sm">SafeMarket AI Risk Screening</h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Every product title, description, and price is scanned by Google Gemini AI to highlight high-pressure tactics or impossible prices.
+                  Every product title, description, and price is scanned by SafeMarket AI to highlight high-pressure tactics or unrealistic prices.
                 </p>
               </div>
             </div>

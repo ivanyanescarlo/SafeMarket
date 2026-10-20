@@ -8,10 +8,10 @@ exports.analyzeListing = async (req, res) => {
   try {
     const { title, description, price, category, condition, location, brand, model } = req.body;
 
-    if (!title && !description) {
+    if (typeof title !== 'string' || !title.trim() || typeof description !== 'string' || !description.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide at least a title or description for AI risk analysis.'
+        message: 'Please enter a product title and description before analyzing.'
       });
     }
 

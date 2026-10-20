@@ -28,7 +28,7 @@ export default function RiskWarningBanner({
               </h4>
             </div>
             <p className="text-sm text-rose-800 mt-1 font-medium">
-              {riskSummary || 'Potential warning signs and high scam probability indicators were identified by Gemini AI.'}
+              {riskSummary || 'Potential warning signs and high scam probability indicators were identified by SafeMarket AI.'}
             </p>
 
             {riskIndicators && riskIndicators.length > 0 && (
@@ -76,7 +76,7 @@ export default function RiskWarningBanner({
               </h4>
             </div>
             <p className="text-xs text-amber-800 mt-1">
-              {riskSummary || 'Moderate risk indicators such as pricing variance or urgency were detected by Gemini AI.'}
+              {riskSummary || 'Moderate risk indicators such as pricing variance or urgency were detected by SafeMarket AI.'}
             </p>
 
             {riskIndicators && riskIndicators.length > 0 && (

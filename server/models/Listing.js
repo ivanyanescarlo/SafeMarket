@@ -22,7 +22,7 @@ const listingSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Price is required'],
       min: [0, 'Price must be positive'],
-      max: [500000, 'Price cannot exceed ₱500,000']
+      max: [599999, 'Price cannot exceed ₱599,999']
     },
     category: {
       type: String,

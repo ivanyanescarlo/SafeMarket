@@ -70,7 +70,7 @@ export default function Cart() {
                 My Saved Cart ({user ? cart.length : 0})
               </h1>
               <p className="text-xs text-slate-500">
-                Review saved items, compare Gemini AI scam risk ratings, and message sellers for local meetups.
+                Review saved items, compare SafeMarket AI scam risk ratings, and message sellers for local meetups.
               </p>
             </div>
           </div>

@@ -54,7 +54,7 @@ export default function Login() {
             Welcome to SafeMarket
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-2">
-            Secure peer-to-peer marketplace with Gemini AI scam detection.
+            Secure peer-to-peer marketplace with SafeMarket AI scam detection.
           </p>
         </div>
 

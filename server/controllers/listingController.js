@@ -5,6 +5,8 @@ const Notification = require('../models/Notification');
 const { analyzeListingWithGemini } = require('../utils/aiRiskAnalyzer');
 const { logActivity } = require('../utils/logger');
 
+const MAX_LISTING_PRICE = 599999;
+
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -44,10 +46,10 @@ exports.createListing = async (req, res) => {
     }
 
     const numPrice = Number(price);
-    if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > 500000) {
+    if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > MAX_LISTING_PRICE) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid price between ₱0 and ₱500,000.'
+        message: 'Please provide a valid price between ₱0 and ₱599,999.'
       });
     }
 
@@ -374,10 +376,10 @@ exports.updateListing = async (req, res) => {
 
     if (price !== undefined) {
       const numPrice = Number(price);
-      if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > 500000) {
+      if (!Number.isFinite(numPrice) || numPrice < 0 || numPrice > MAX_LISTING_PRICE) {
         return res.status(400).json({
           success: false,
-          message: 'Please provide a valid price between ₱0 and ₱500,000.'
+          message: 'Please provide a valid price between ₱0 and ₱599,999.'
         });
       }
     }

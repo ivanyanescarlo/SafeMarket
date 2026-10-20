@@ -1,7 +1,7 @@
 {
   "name": "safemarket-server",
   "version": "1.0.0",
-  "description": "SafeMarket Express & MongoDB Backend with Gemini AI Scam Risk Analyzer",
+  "description": "SafeMarket Express & MongoDB Backend with SafeMarket AI Scam Risk Analyzer",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

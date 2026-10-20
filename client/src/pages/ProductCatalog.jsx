@@ -219,7 +219,7 @@ export default function ProductCatalog() {
             buttonClassName="!py-2 !rounded-lg !text-xs !bg-slate-50"
           />
 
-          {/* Gemini AI Risk Level Filter */}
+          {/* SafeMarket AI Risk Level Filter */}
           <CustomSelect
             label="AI Risk Level"
             value={riskLevel}

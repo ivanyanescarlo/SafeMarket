@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 /**
  * CustomSelect Component
  * 
- * Specifically designed to:
- * 1. ALWAYS pop DOWNWARDS (top-full mt-1.5 z-50), never pop upwards to block the screen.
- * 2. Constrain vertical height (max-h-56) with smooth scrolling so it won't cover the entire screen.
- * 3. Support clean outside-click closing and custom option rendering.
+ * Always opens its menu downward, with a height constrained to available
+ * space, and supports outside-click closing and custom option rendering.
  */
 export default function CustomSelect({
   label,
@@ -22,12 +21,17 @@ export default function CustomSelect({
   buttonClassName = ''
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
   const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
 
   // Close when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        !dropdownRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -44,6 +48,35 @@ export default function CustomSelect({
   });
 
   const selectedOption = normalizedOptions.find((opt) => opt.value === value);
+
+  const toggleDropdown = () => {
+    if (disabled) return;
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
+
+    const rect = dropdownRef.current?.getBoundingClientRect();
+    if (rect) {
+      const gap = 6;
+      let top = rect.bottom + gap;
+      const neededHeight = Math.min(224, normalizedOptions.length * 40);
+      if (top + neededHeight > window.innerHeight && rect.top > neededHeight) {
+        window.scrollBy({ top: top + neededHeight - window.innerHeight + 12, behavior: 'auto' });
+      }
+      const updatedRect = dropdownRef.current?.getBoundingClientRect();
+      if (updatedRect) {
+        top = updatedRect.bottom + gap;
+        setMenuPosition({
+          top,
+          left: updatedRect.left,
+          width: updatedRect.width,
+          maxHeight: Math.max(40, Math.min(224, window.innerHeight - top - 8))
+        });
+      }
+    }
+    setIsOpen(true);
+  };
 
   const handleSelect = (optValue) => {
     if (onChange) {
@@ -70,9 +103,7 @@ export default function CustomSelect({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => {
-          if (!disabled) setIsOpen(!isOpen);
-        }}
+        onClick={toggleDropdown}
         className={`w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 flex items-center justify-between text-left transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-safegreen-500 ${
           disabled
             ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
@@ -102,14 +133,14 @@ export default function CustomSelect({
         />
       )}
 
-      {/* 
-        Downward Dropdown Popup:
-        - ALWAYS pops DOWN (top-full mt-1.5), NEVER pops top.
-        - Scrollable and constrained to max-h-56 so it won't cover the screen.
-      */}
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in">
-          <div className="max-h-56 overflow-y-auto overscroll-contain divide-y divide-slate-50">
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[9999] bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in"
+            style={menuPosition}
+          >
+            <div className="max-h-full overflow-y-auto overscroll-contain divide-y divide-slate-50">
             {normalizedOptions.length === 0 ? (
               <div className="py-3 px-4 text-center text-xs text-slate-400">
                 No options available
@@ -133,8 +164,11 @@ export default function CustomSelect({
                 );
               })
             )}
+            </div>
           </div>
-        </div>
+          ,
+          document.body
+        )
       )}
     </div>
   );

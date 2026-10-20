@@ -55,7 +55,7 @@ export default function Footer() {
             <ul className="space-y-2 text-xs text-slate-400">
               <li>Meetup in Well-Lit Public Malls</li>
               <li>Inspect Items Physically</li>
-              <li>Gemini AI Scam Risk Analyzer</li>
+              <li>SafeMarket AI Scam Risk Analyzer</li>
               <li>Community Report System</li>
               <li>Verified Seller Activation</li>
             </ul>

@@ -228,7 +228,7 @@ export default function BecomeSeller() {
             Seller Mode Activated!
           </h2>
           <p className="text-slate-600 mt-2 text-sm max-w-lg mx-auto">
-            Welcome to the SafeMarket seller community! You now have full access to create listings with real-time Gemini AI risk analysis, communicate with buyers, and build a verified rating.
+            Welcome to the SafeMarket seller community! You now have full access to create listings with real-time SafeMarket AI risk analysis, communicate with buyers, and build a verified rating.
           </p>
 
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
