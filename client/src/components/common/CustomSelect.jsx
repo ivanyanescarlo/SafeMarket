@@ -140,7 +140,10 @@ export default function CustomSelect({
             className="fixed z-[9999] bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in"
             style={menuPosition}
           >
-            <div className="max-h-full overflow-y-auto overscroll-contain divide-y divide-slate-50">
+            <div
+              className="overflow-y-auto overscroll-contain divide-y divide-slate-50"
+              style={{ maxHeight: menuPosition?.maxHeight }}
+            >
             {normalizedOptions.length === 0 ? (
               <div className="py-3 px-4 text-center text-xs text-slate-400">
                 No options available
