@@ -17,25 +17,30 @@ const seedData = async (forceClear = false) => {
     const userCount = await User.countDocuments();
     if (!forceClear && userCount > 0) {
       const updateSeededSeller = async (legacyEmail, legacyUsername, updates) => {
-        const [userByEmail, userByUsername] = await Promise.all([
-          User.findOne({ email: legacyEmail }),
-          User.findOne({ username: legacyUsername })
+        const currentEmail = updates.email.toLowerCase();
+        const currentUsername = (updates.username || legacyUsername).toLowerCase();
+        const [usersByEmail, usersByUsername] = await Promise.all([
+          User.find({ email: { $in: [legacyEmail, currentEmail] } }),
+          User.find({ username: { $in: [legacyUsername.toLowerCase(), currentUsername] } })
         ]);
-        if (userByEmail && userByUsername && !userByEmail._id.equals(userByUsername._id)) {
+        const matchedUsers = [...usersByEmail, ...usersByUsername].filter((user, index, users) =>
+          users.findIndex((match) => match._id.equals(user._id)) === index
+        );
+        if (matchedUsers.length > 1) {
           console.warn(`[Seed] Skipped ${legacyEmail}: legacy email and username belong to different users.`);
-          return false;
+          return null;
         }
 
-        const user = userByEmail || userByUsername;
+        const user = matchedUsers[0];
         if (!user) {
           console.warn(`[Seed] No existing sample seller matched ${legacyEmail} or ${legacyUsername}.`);
-          return false;
+          return null;
         }
 
         const normalizedUpdates = {
           ...updates,
-          email: updates.email.toLowerCase(),
-          username: (updates.username || user.username).toLowerCase()
+          email: currentEmail,
+          username: currentUsername
         };
 
         const conflictingUser = await User.exists({
@@ -47,15 +52,15 @@ const seedData = async (forceClear = false) => {
         });
         if (conflictingUser) {
           console.warn(`[Seed] Skipped updating ${legacyEmail}: new email or username is already in use.`);
-          return false;
+          return null;
         }
 
         user.set(normalizedUpdates);
         await user.save();
-        return true;
+        return user;
       };
 
-      const updatedSellers = await Promise.all([
+      const [seller1, seller2] = await Promise.all([
         updateSeededSeller('maria@safemarket.ph', 'maria_seller', {
           firstName: 'John',
           lastName: 'Tabadero',
@@ -70,9 +75,32 @@ const seedData = async (forceClear = false) => {
           location: { province: 'Pangasinan', cityMunicipality: 'Dagupan City' }
         })
       ]);
-      const updatedCount = updatedSellers.filter(Boolean).length;
+      const updatedCount = [seller1, seller2].filter(Boolean).length;
       if (updatedCount) {
         console.log(`[Seed] Updated ${updatedCount} existing sample seller account(s) without clearing data.`);
+      }
+
+      const seededSellerReviews = [
+        {
+          seller: seller1,
+          feedback: 'Very smooth transaction! Maria was punctual and let me test the Sony headphones thoroughly at Trinoma. Highly recommended seller!'
+        },
+        {
+          seller: seller2,
+          feedback: 'Excellent Fujifilm camera as described. Seller was very accommodating and honest about shutter count.'
+        }
+      ];
+
+      for (const { seller, feedback } of seededSellerReviews) {
+        if (!seller) continue;
+
+        await Rating.deleteMany({ sellerId: seller._id, feedback });
+        const ratings = await Rating.find({ sellerId: seller._id }).select('rating');
+        seller.ratingCount = ratings.length;
+        seller.averageRating = ratings.length
+          ? Number((ratings.reduce((total, review) => total + review.rating, 0) / ratings.length).toFixed(1))
+          : 0;
+        await seller.save();
       }
 
       console.log(`[Seed] Database already populated (${userCount} users found). Skipping auto-seed.`);
@@ -131,8 +159,6 @@ const seedData = async (forceClear = false) => {
         guidelinesAccepted: true,
         activatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       },
-      averageRating: 4.9,
-      ratingCount: 8
     });
 
     const seller2 = await User.create({
@@ -159,8 +185,6 @@ const seedData = async (forceClear = false) => {
         guidelinesAccepted: true,
         activatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
       },
-      averageRating: 4.8,
-      ratingCount: 5
     });
 
     // 3. Create Verified Buyer
@@ -458,25 +482,7 @@ const seedData = async (forceClear = false) => {
     const createdListings = await Listing.insertMany(listings);
     console.log(`[Seed] Created ${createdListings.length} product listings with Gemini AI Risk Analysis.`);
 
-    // 5. Create Sample Ratings
-    await Rating.create({
-      sellerId: seller1._id,
-      buyerId: buyer._id,
-      listingId: createdListings[0]._id,
-      rating: 5,
-      feedback: 'Very smooth transaction! Maria was punctual and let me test the Sony headphones thoroughly at Trinoma. Highly recommended seller!'
-    });
-
-    await Rating.create({
-      sellerId: seller2._id,
-      buyerId: buyer._id,
-      listingId: createdListings[2]._id,
-      rating: 5,
-      feedback: 'Excellent Fujifilm camera as described. Seller was very accommodating and honest about shutter count.'
-    });
-    console.log('[Seed] Created sample ratings & reviews.');
-
-    // 6. Create Initial Activity Logs
+    // 5. Create Initial Activity Logs
     await ActivityLog.create([
       {
         userId: admin._id,
@@ -527,7 +533,7 @@ const seedData = async (forceClear = false) => {
 
 if (require.main === module) {
   mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/SafeMarket')
-    .then(() => seedData(true))
+    .then(() => seedData())
     .then(() => process.exit(0))
     .catch((err) => {
       console.error(err);

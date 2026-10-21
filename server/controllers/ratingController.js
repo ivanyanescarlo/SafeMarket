@@ -62,11 +62,12 @@ exports.createRating = async (req, res) => {
       });
     }
 
-    // Check if buyer has already reviewed this seller for this listing
-    let existingRating;
-    if (listingId) {
-      existingRating = await Rating.findOne({ sellerId, buyerId, listingId });
-    }
+    // Match unlinked conversations too; the unique index treats a missing listing as null.
+    const existingRating = await Rating.findOne({
+      sellerId,
+      buyerId,
+      listingId: listingId || null
+    });
 
     let review;
     if (existingRating) {
